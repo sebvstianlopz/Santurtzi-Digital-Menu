@@ -1,0 +1,25 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: Coquito
+category: casa
+order: 4
+seasonal: true
+price: 9
+base: { es: Ron blanco puertorriqueño, en: Puerto Rican white rum }
+unique:
+  es: La bebida navideña de Puerto Rico, hecha en casa. Solo en temporada.
+  en: Puerto Rico's Christmas drink, made in-house. Seasonal only.
+description:
+  es: Cremoso y especiado, como el de la abuela. Se sirve bien frío con canela por encima.
+  en: Creamy and spiced, just like grandma's. Served chilled with a dusting of cinnamon.
+ingredients:
+  - { es: Ron blanco, en: White rum }
+  - { es: Crema de coco, en: Cream of coconut }
+  - { es: Leche condensada, en: Condensed milk }
+  - { es: Canela y vainilla, en: Cinnamon and vanilla }
+flavor: [cremoso, dulce]
+strength: 2
+glass: rocks
+color: '#eadcbc'
+garnish: cinnamon
+contains: [lacteos, coco]
+pairsWith: [pina-colada, espresso-martini]

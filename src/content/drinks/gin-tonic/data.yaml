@@ -1,0 +1,23 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: Gin-Tonic
+category: clasicos
+order: 6
+price: 12
+base: Gin
+unique:
+  es: Al estilo español, en copa balón con mucho hielo, tónica premium y botánicos.
+  en: Spanish-style, in a balloon glass with lots of ice, premium tonic and botanicals.
+description:
+  es: Seco, aromático y muy refrescante. Más largo y menos dulce que la mayoría de los cócteles.
+  en: Dry, aromatic and very refreshing. Longer and less sweet than most cocktails.
+ingredients:
+  - Gin
+  - { es: Tónica premium, en: Premium tonic }
+  - { es: Piel de limón, en: Lemon peel }
+  - { es: Bayas de enebro, en: Juniper berries }
+flavor: [refrescante, herbal, citrico]
+strength: 2
+glass: copa
+color: '#dcebe6'
+garnish: lemon
+pairsWith: [mojito, santurtzi-spritz, parcha-tonic]

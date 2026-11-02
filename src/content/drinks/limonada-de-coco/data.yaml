@@ -1,0 +1,22 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: { es: Limonada de coco, en: Coconut Lemonade }
+category: sin-alcohol
+order: 3
+price: 7
+unique:
+  es: Cremosa y cítrica a la vez, como una piña colada ligera sin alcohol.
+  en: Creamy and citrusy at once, like a light alcohol-free piña colada.
+description:
+  es: Limón y crema de coco batidos con hielo. Dulce, fresca y tropical.
+  en: Lime and cream of coconut blended with ice. Sweet, cool and tropical.
+ingredients:
+  - { es: Jugo de limón, en: Lime juice }
+  - { es: Crema de coco, en: Cream of coconut }
+  - { es: Hielo frappé, en: Blended ice }
+flavor: [cremoso, citrico, refrescante]
+strength: 0
+glass: hurricane
+color: '#f2efe3'
+garnish: lime
+contains: [coco]
+pairsWith: [pina-colada, virgin-mojito]

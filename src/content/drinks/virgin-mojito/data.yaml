@@ -1,0 +1,22 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: { es: Mojito sin alcohol, en: Virgin Mojito }
+category: sin-alcohol
+order: 2
+price: 7
+unique:
+  es: Todo lo bueno del mojito, sin alcohol. Hierbabuena fresca y limón.
+  en: Everything good about a mojito, without the alcohol. Fresh mint and lime.
+description:
+  es: Hierbabuena, limón y azúcar de caña con soda. Ligero y muy refrescante.
+  en: Mint, lime and cane sugar topped with soda. Light and very refreshing.
+ingredients:
+  - { es: Hierbabuena fresca, en: Fresh mint }
+  - { es: Jugo de limón, en: Lime juice }
+  - { es: Azúcar de caña, en: Cane sugar }
+  - { es: Soda, en: Soda water }
+flavor: [refrescante, citrico, herbal]
+strength: 0
+glass: highball
+color: '#d6ecaa'
+garnish: mint
+pairsWith: [mojito, limonada-de-coco]

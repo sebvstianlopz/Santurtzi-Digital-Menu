@@ -1,0 +1,23 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: Espresso Martini
+category: clasicos
+order: 5
+price: 13
+base: Vodka
+unique:
+  es: Hecho con café de las montañas de Puerto Rico, recién preparado. Te despierta la noche.
+  en: Made with freshly pulled Puerto Rican mountain coffee. It wakes the night up.
+description:
+  es: Vodka, espresso y licor de café, agitado hasta lograr una espuma sedosa. Contiene cafeína.
+  en: Vodka, espresso and coffee liqueur, shaken to a silky foam. Contains caffeine.
+ingredients:
+  - Vodka
+  - { es: Espresso puertorriqueño, en: Puerto Rican espresso }
+  - { es: Licor de café, en: Coffee liqueur }
+  - { es: Almíbar, en: Simple syrup }
+flavor: [dulce, amargo]
+strength: 2
+glass: martini
+color: '#3a2216'
+garnish: coffee
+pairsWith: [calle-cerra-old-fashioned, coquito]

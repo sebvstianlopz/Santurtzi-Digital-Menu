@@ -1,0 +1,24 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: Mojito
+category: clasicos
+order: 2
+price: 11
+base: { es: Ron blanco, en: White rum }
+unique:
+  es: Hierbabuena machacada al momento. El más refrescante de la carta.
+  en: Mint muddled to order. The most refreshing drink on the menu.
+description:
+  es: Ron blanco, limón y hierbabuena con un toque de soda. Ligero y cítrico, perfecto para el calor.
+  en: White rum, lime and mint topped with soda. Light and citrusy, made for the heat.
+ingredients:
+  - { es: Ron blanco, en: White rum }
+  - { es: Hierbabuena fresca, en: Fresh mint }
+  - { es: Jugo de limón, en: Lime juice }
+  - { es: Azúcar de caña, en: Cane sugar }
+  - { es: Soda, en: Soda water }
+flavor: [refrescante, citrico, herbal]
+strength: 2
+glass: highball
+color: '#cfe6a0'
+garnish: mint
+pairsWith: [virgin-mojito, gin-tonic, margarita]

@@ -1,0 +1,22 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: Parcha Tonic
+category: sin-alcohol
+order: 1
+price: 7
+unique:
+  es: Sabe a cóctel pero no lleva alcohol. Parcha, tónica y romero.
+  en: Tastes like a cocktail, without the alcohol. Passion fruit, tonic and rosemary.
+description:
+  es: Ácido y burbujeante, con un final ligeramente amargo de la tónica.
+  en: Tart and sparkling, with a gently bitter finish from the tonic.
+ingredients:
+  - { es: Pulpa de parcha, en: Passion fruit pulp }
+  - { es: Agua tónica, en: Tonic water }
+  - { es: Romero, en: Rosemary }
+  - { es: Limón, en: Lime }
+flavor: [refrescante, afrutado, citrico]
+strength: 0
+glass: highball
+color: '#f4c04a'
+garnish: passion
+pairsWith: [daiquiri-de-parcha, gin-tonic]

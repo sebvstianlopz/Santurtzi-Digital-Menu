@@ -1,0 +1,24 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: Calle Cerra Old Fashioned
+category: casa
+order: 3
+signature: true
+price: 14
+base: { es: Ron añejo puertorriqueño, en: Aged Puerto Rican rum }
+unique:
+  es: Old fashioned de ron añejo con melao de caña y amargo de café. Para tomar despacio.
+  en: A rum old fashioned with sugarcane syrup and coffee bitters. One to sip slowly.
+description:
+  es: Nuestra versión boricua del clásico. Notas de caramelo, roble y café, con un toque de naranja.
+  en: Our Puerto Rican take on the classic. Notes of caramel, oak and coffee, finished with orange.
+ingredients:
+  - { es: Ron añejo puertorriqueño, en: Aged Puerto Rican rum }
+  - { es: Melao de caña, en: Sugarcane syrup }
+  - { es: Amargo de café, en: Coffee bitters }
+  - { es: Piel de naranja, en: Orange peel }
+flavor: [ahumado, amargo, dulce]
+strength: 3
+glass: rocks
+color: '#9a4a1c'
+garnish: orange
+pairsWith: [negroni, espresso-martini]

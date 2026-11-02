@@ -1,0 +1,18 @@
+---
+import Base from '../layouts/Base.astro';
+import { site } from '../config/site';
+import { menuPath } from '../i18n';
+---
+<Base lang="es" title="Santurtzi · Página no encontrada" noindex>
+  <main class="nf">
+    <h1 class="serif">{site.name}</h1>
+    <p>Esta página no existe. · This page doesn't exist.</p>
+    <a class="btn btn-primary" href={menuPath('es')}>Ver el menú · See the menu</a>
+  </main>
+</Base>
+
+<style>
+  .nf { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px 16px; text-align: center; }
+  h1 { font-size: 56px; font-weight: 500; letter-spacing: -0.02em; }
+  p { color: var(--muted); }
+</style>

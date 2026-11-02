@@ -1,0 +1,22 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: Medalla Light
+category: cervezas
+order: 1
+price: 4
+size: 12 oz
+base: { es: Cerveza lager ligera, en: Light lager }
+unique:
+  es: La cerveza de Puerto Rico. Ligera y bien fría.
+  en: Puerto Rico's own beer. Light and ice-cold.
+description:
+  es: Lager ligera de Cervecería India en Mayagüez. Suave, refrescante y fácil de tomar.
+  en: A light lager brewed by Cervecería India in Mayagüez. Smooth, crisp and easy-drinking.
+ingredients:
+  - { es: Malta de cebada, en: Barley malt }
+  - { es: Lúpulo, en: Hops }
+flavor: [refrescante]
+strength: 1
+glass: bottle
+color: '#e9c75a'
+contains: [gluten]
+pairsWith: [magna, ipa-local]

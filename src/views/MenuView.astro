@@ -1,0 +1,291 @@
+---
+import Base from '../layouts/Base.astro';
+import DrinkCard from '../components/DrinkCard.astro';
+import DrinkSheet from '../components/DrinkSheet.astro';
+import Icon from '../components/Icon.astro';
+import { getMenu } from '../utils/drinks';
+import { site, type Lang } from '../config/site';
+import { t, tx, menuPath, formatTime } from '../i18n';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const d = t(lang);
+const other: Lang = lang === 'es' ? 'en' : 'es';
+const { sections, byId, all } = await getMenu();
+
+const filterChips = [
+  ...(['refrescante', 'citrico', 'dulce', 'afrutado', 'amargo', 'cremoso'] as const).map((f) => ({ key: `flavor:${f}`, label: d.flavor[f] })),
+  { key: 'strength:zero', label: d.filter.zero },
+  { key: 'strength:light', label: d.filter.light },
+  { key: 'strength:strong', label: d.filter.strong },
+];
+
+// Everything the client script needs: names (plus the Spanish name for the bartender), prices, strings.
+const es = t('es');
+const data = {
+  lang,
+  locale: d.htmlLang,
+  currency: site.currency,
+  timeZone: site.timeZone,
+  hours: site.hours,
+  drinks: Object.fromEntries(
+    all.map((x) => [x.id, { name: tx(x.data.name, lang), es: tx(x.data.name, 'es'), price: x.data.price, size: x.data.size ?? '', ok: x.data.available }]),
+  ),
+  s: {
+    status: d.status,
+    days: d.footer.days,
+    results: [d.results(1), d.results(2).replace('2', '{n}')],
+    items: [d.order.items(1), d.order.items(2).replace('2', '{n}')],
+    inOrder: d.inOrder(0).replace('0', '{n}'),
+    remove: d.remove,
+    add: d.add,
+    confirmClear: d.order.confirmClear,
+  },
+  esItems: [es.order.items(1), es.order.items(2).replace('2', '{n}')],
+};
+---
+<Base lang={lang}>
+  {lang === 'es' && (
+    <script is:inline slot="head" define:vars={{ en: menuPath('en') }}>
+      try {
+        if (!localStorage.getItem('stz-lang') && /^en\b/i.test(navigator.language || '')) location.replace(en + location.hash);
+      } catch (e) {}
+    </script>
+  )}
+
+  <header class="top wrap">
+    <div class="brand">
+      <p class="eyebrow">{d.tagline} · {site.street}, {site.area}</p>
+      <h1 class="serif">{site.name}</h1>
+      <p class="status" data-status hidden><i aria-hidden="true"></i><span></span></p>
+    </div>
+    <a class="lang" href={menuPath(other)} data-lang={other} hreflang={other} aria-label={d.switchAria}>{d.switchLabel}</a>
+  </header>
+
+  <div class="wrap"><p class="hint">{d.hint}</p></div>
+
+  <nav class="catnav" aria-label={d.menuNav}>
+    <ul class="wrap">
+      {sections.map((s) => (
+        <li><a href={`#cat-${s.category}`} data-nav={s.category}>{d.category[s.category].name}</a></li>
+      ))}
+    </ul>
+  </nav>
+
+  <main class="wrap">
+    <div class="filters" role="group" aria-label={d.filtersLabel}>
+      <div class="chips-row">
+        {filterChips.map((c) => (
+          <button type="button" class="fchip" data-filter={c.key} aria-pressed="false">{c.label}</button>
+        ))}
+      </div>
+      <p class="filter-status" data-filter-status hidden>
+        <span data-results aria-live="polite"></span>
+        <button type="button" class="clear" data-clear-filters>{d.clear}</button>
+      </p>
+    </div>
+
+    {sections.map((s, si) => (
+      <section class="cat" id={`cat-${s.category}`} data-cat={s.category} aria-labelledby={`h-${s.category}`}>
+        <header class="cat-head">
+          <h2 class="serif" id={`h-${s.category}`}>{d.category[s.category].name}</h2>
+          <p>{d.category[s.category].sub}</p>
+        </header>
+        <div class="list">
+          {s.drinks.map((drink, i) => <DrinkCard drink={drink} lang={lang} eager={si === 0 && i < 3} />)}
+        </div>
+      </section>
+    ))}
+    <p class="empty" data-empty hidden>{d.noResults}</p>
+  </main>
+
+  <footer class="foot wrap">
+    <p class="foot-name serif">{site.name}</p>
+    <p class="addr">{site.street}, {site.area}, {site.region}</p>
+    <div class="foot-links">
+      <a class="btn btn-ghost" href={site.mapsUrl} target="_blank" rel="noopener"><Icon name="pin" size={18} />{d.footer.map}</a>
+      {site.instagram && (
+        <a class="btn btn-ghost" href={`https://instagram.com/${site.instagram}`} target="_blank" rel="noopener"><Icon name="insta" size={18} />@{site.instagram}</a>
+      )}
+    </div>
+    <div class="hours">
+      <h2>{d.footer.hours}</h2>
+      <ul>
+        {[1, 2, 3, 4, 5, 6, 0].map((i) => {
+          const h = site.hours[i];
+          return <li data-day={i}><span>{d.footer.days[i]}</span><span>{h ? `${formatTime(h.open, lang)} – ${formatTime(h.close, lang)}` : d.footer.closed}</span></li>;
+        })}
+      </ul>
+    </div>
+    <p class="fine">{d.footer.allergies}</p>
+    <p class="fine">{d.footer.responsibly}</p>
+  </footer>
+
+  <button class="orderbar" type="button" data-open-order hidden>
+    <span class="ob-count" data-ob-count></span>
+    <span class="ob-label">{d.order.bar}</span>
+    <span class="ob-total" data-ob-total></span>
+  </button>
+
+  {all.map((drink) => <DrinkSheet drink={drink} lang={lang} byId={byId} />)}
+
+  <dialog class="sheet order-sheet" id="order" aria-labelledby="order-title">
+    <span class="grabber" aria-hidden="true"></span>
+    <button class="sheet-close" type="button" data-close aria-label={d.sheet.close}><Icon name="x" /></button>
+    <div class="sheet-scroll">
+      <div class="order-body">
+        <h2 class="serif" id="order-title">{d.order.title}</h2>
+        <p class="order-empty" data-order-empty>{d.order.empty}</p>
+        <ul class="order-list" data-order-list></ul>
+      </div>
+    </div>
+    <div class="order-foot" data-order-foot>
+      <div class="order-total"><span>{d.order.total}</span><span class="price" data-order-total></span></div>
+      <p class="order-note">{d.order.note}</p>
+      <button class="btn btn-primary" type="button" data-show-bartender>{d.order.show}</button>
+      <button class="btn-text" type="button" data-clear-order><Icon name="trash" size={16} />{d.order.clear}</button>
+    </div>
+  </dialog>
+
+  <dialog class="bartender" id="bartender" aria-labelledby="bt-title">
+    <div class="bt-inner">
+      <p class="bt-hint">{d.order.bartenderHint}</p>
+      <h2 class="serif" id="bt-title">{d.order.bartenderTitle}</h2>
+      <ul class="bt-list" data-bt-list></ul>
+      <div class="bt-total"><span data-bt-count></span><span data-bt-total></span></div>
+      <button class="btn btn-ghost" type="button" data-close><Icon name="back" size={18} />{d.order.back}</button>
+    </div>
+  </dialog>
+
+  <script type="application/json" id="menu-data" set:html={JSON.stringify(data)} />
+  <script>
+    import '../scripts/menu';
+  </script>
+</Base>
+
+<style>
+  .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-top: 28px; padding-bottom: 8px; }
+  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
+  h1 { font-size: clamp(44px, 13vw, 64px); font-weight: 500; letter-spacing: -0.02em; line-height: 1; margin-top: 8px; }
+  .status { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: var(--muted); font-weight: 600; }
+  .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
+  .status.open i { background: var(--zero); box-shadow: 0 0 0 4px var(--zero-soft); }
+  .lang {
+    flex: none; min-width: 48px; height: 44px; padding: 0 14px;
+    display: grid; place-items: center;
+    border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line-strong);
+    font-size: 14px; font-weight: 800; letter-spacing: 0.06em; text-decoration: none;
+  }
+
+  .hint { margin-top: 14px; font-size: 14px; color: var(--muted); max-width: 46ch; }
+
+  .catnav {
+    position: sticky; top: 0; z-index: 10;
+    margin-top: 18px;
+    background: rgba(12, 14, 19, 0.86);
+    backdrop-filter: blur(14px) saturate(1.2);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    border-bottom: 1px solid var(--line);
+  }
+  .catnav ul { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; height: var(--header-h); align-items: center; }
+  .catnav ul::-webkit-scrollbar { display: none; }
+  .catnav a {
+    display: inline-flex; align-items: center; height: 36px; padding: 0 14px;
+    border-radius: 999px; white-space: nowrap; text-decoration: none;
+    font-size: 14px; font-weight: 700; color: var(--muted);
+    transition: background-color 0.2s, color 0.2s;
+  }
+  .catnav a.active { background: var(--text); color: var(--bg); }
+
+  .filters { padding: 16px 0 4px; }
+  .chips-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
+  .chips-row::-webkit-scrollbar { display: none; }
+  .fchip {
+    flex: none; height: 40px; padding: 0 14px;
+    border: 0; border-radius: 999px;
+    background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-strong);
+    font-size: 14px; font-weight: 600; color: var(--text);
+    transition: background-color 0.15s, color 0.15s;
+  }
+  .fchip[aria-pressed='true'] { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+  .filter-status { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; font-size: 14px; color: var(--muted); font-weight: 600; }
+  .clear { border: 0; background: none; color: var(--accent); font-weight: 700; padding: 10px 0 10px 12px; text-decoration: underline; text-underline-offset: 3px; }
+
+  .cat { padding-top: 28px; }
+  .cat[hidden] { display: none; }
+  .cat-head { margin-bottom: 14px; }
+  .cat-head h2 { font-size: 28px; font-weight: 500; letter-spacing: -0.01em; }
+  .cat-head p { margin-top: 4px; font-size: 14px; color: var(--muted); }
+  .list { display: flex; flex-direction: column; gap: 10px; }
+  .empty { padding: 48px 0; text-align: center; color: var(--muted); }
+
+  .foot { margin-top: 56px; padding-top: 32px; padding-bottom: 120px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+  .foot-name { font-size: 26px; font-weight: 500; }
+  .addr { color: var(--muted); font-size: 14px; }
+  .foot-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
+  .foot-links .btn { min-height: 44px; font-size: 14px; }
+  .hours { margin: 8px 0; }
+  .hours h2 { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
+  .hours li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .hours li.today { color: var(--text); font-weight: 700; }
+  .fine { font-size: 13px; color: var(--faint); }
+
+  .orderbar {
+    position: fixed; z-index: 20;
+    left: 50%; bottom: calc(14px + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(calc(100% - 2 * var(--gutter)), 420px);
+    height: 58px; padding: 0 8px 0 8px;
+    display: flex; align-items: center; gap: 12px;
+    border: 0; border-radius: 999px;
+    background: var(--accent); color: var(--accent-ink);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 6px rgba(12, 14, 19, 0.5);
+    font-weight: 800; font-size: 16px;
+    animation: rise 0.3s var(--ease);
+  }
+  .orderbar[hidden] { display: none; }
+  .orderbar.bump { animation: pulse 0.35s var(--ease); }
+  .ob-count { min-width: 42px; height: 42px; padding: 0 10px; display: grid; place-items: center; border-radius: 999px; background: var(--accent-ink); color: var(--accent); font-variant-numeric: tabular-nums; }
+  .ob-label { flex: 1; text-align: left; }
+  .ob-total { padding-right: 14px; font-variant-numeric: tabular-nums; }
+  @keyframes rise { from { transform: translate(-50%, 120%); } }
+  @keyframes pulse { 40% { transform: translateX(-50%) scale(1.04); } }
+
+  .order-body { padding: 28px var(--gutter) 12px; }
+  .order-body h2 { font-size: 30px; font-weight: 500; margin-bottom: 12px; }
+  .order-empty { color: var(--muted); padding: 12px 0 24px; }
+  .order-sheet[data-has-items] .order-empty { display: none; }
+  .order-sheet:not([data-has-items]) .order-foot { display: none; }
+  .order-foot { padding: 12px var(--gutter) calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+  .order-total { display: flex; justify-content: space-between; align-items: baseline; font-size: 18px; font-weight: 700; }
+  .order-total .price { font-size: 24px; }
+  .order-note { font-size: 13px; color: var(--faint); }
+  .btn-text { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 0; background: none; color: var(--muted); font-weight: 600; font-size: 14px; }
+
+  .bartender {
+    width: 100%; height: 100%; max-width: none; max-height: none;
+    margin: 0; padding: 0; border: 0;
+    background: #f6f1e7; color: #111;
+  }
+  .bartender[open] { display: block; }
+  .bartender::backdrop { background: #f6f1e7; }
+  .bt-inner { max-width: 640px; margin: 0 auto; min-height: 100%; padding: calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 16px; }
+  .bt-hint { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #5b554c; }
+  .bt-inner h2 { font-size: 40px; font-weight: 600; }
+  .bt-total { display: flex; justify-content: space-between; padding-top: 16px; border-top: 3px solid #111; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
+  .bartender .btn-ghost { background: #111; color: #f6f1e7; box-shadow: none; margin-top: auto; }
+</style>
+
+<style is:global>
+  /* Rows rendered by the client script. */
+  .order-list li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); }
+  .order-list .o-name { font-family: var(--serif); font-size: 19px; font-weight: 560; }
+  .order-list .o-meta { grid-column: 1; font-size: 13px; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .order-list .o-step { grid-row: 1 / span 2; grid-column: 2; display: flex; align-items: center; gap: 8px; }
+  .order-list .o-qty { min-width: 24px; text-align: center; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
+  .bt-list li { display: flex; align-items: baseline; gap: 14px; padding: 12px 0; border-bottom: 1px solid #d8d0c2; }
+  .bt-list .bt-qty { font-size: 34px; font-weight: 800; min-width: 2.2ch; font-variant-numeric: tabular-nums; }
+  .bt-list .bt-name { flex: 1; font-size: 26px; font-weight: 700; line-height: 1.2; }
+  .bt-list .bt-sub { display: block; font-size: 15px; font-weight: 500; color: #5b554c; }
+  .bt-list .bt-price { font-size: 18px; font-weight: 600; color: #5b554c; font-variant-numeric: tabular-nums; }
+</style>

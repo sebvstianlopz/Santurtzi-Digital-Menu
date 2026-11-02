@@ -1,0 +1,21 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: Tequila reposado
+category: shots
+order: 2
+price: 7
+base: Tequila
+unique:
+  es: Reposado en barrica, más suave que el blanco. Con limón y sal.
+  en: Barrel-rested and smoother than blanco. Served with lime and salt.
+description:
+  es: Notas de agave cocido, vainilla y madera.
+  en: Notes of cooked agave, vanilla and oak.
+ingredients:
+  - { es: Tequila reposado 100% agave, en: 100% agave reposado tequila }
+  - { es: Limón y sal, en: Lime and salt }
+flavor: [herbal]
+strength: 3
+glass: shot
+color: '#d9a441'
+garnish: lime
+pairsWith: [margarita, chichaito]

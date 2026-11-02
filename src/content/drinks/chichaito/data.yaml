@@ -1,0 +1,20 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: Chichaíto
+category: shots
+order: 1
+price: 5
+base: { es: Ron y anís, en: Rum and anise }
+unique:
+  es: El shot boricua de toda la vida. Anís y ron, para brindar en grupo.
+  en: Puerto Rico's classic shot. Anise and rum, for a group toast.
+description:
+  es: Dulce y anisado, con un final cálido. Se toma de un golpe.
+  en: Sweet and anise-forward with a warm finish. Taken in one go.
+ingredients:
+  - { es: Ron blanco, en: White rum }
+  - { es: Licor de anís, en: Anise liqueur }
+flavor: [dulce, herbal]
+strength: 3
+glass: shot
+color: '#efe9da'
+pairsWith: [tequila-reposado, coquito]

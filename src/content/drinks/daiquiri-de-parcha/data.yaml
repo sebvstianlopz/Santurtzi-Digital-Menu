@@ -1,0 +1,24 @@
+# PLACEHOLDER: replace with the real recipe, price and photo (see santurtzi/README.md).
+name: { es: Daiquirí de parcha, en: Passion Fruit Daiquiri }
+category: casa
+order: 2
+signature: true
+price: 12
+base: { es: Ron blanco puertorriqueño, en: Puerto Rican white rum }
+unique:
+  es: Parcha fresca de la isla. Ácido, tropical y nada empalagoso.
+  en: Fresh island passion fruit. Tart, tropical and never cloying.
+description:
+  es: El daiquirí clásico, agitado con pulpa de parcha natural. Se sirve bien frío, sin hielo, en copa coupé.
+  en: The classic daiquiri, shaken with real passion fruit pulp. Served ice-cold and straight up in a coupe.
+ingredients:
+  - { es: Ron blanco puertorriqueño, en: Puerto Rican white rum }
+  - { es: Pulpa de parcha, en: Passion fruit pulp }
+  - { es: Jugo de limón fresco, en: Fresh lime juice }
+  - { es: Almíbar de caña, en: Cane syrup }
+flavor: [afrutado, citrico, dulce]
+strength: 2
+glass: coupe
+color: '#f2b632'
+garnish: passion
+pairsWith: [margarita, pina-colada, parcha-tonic]
