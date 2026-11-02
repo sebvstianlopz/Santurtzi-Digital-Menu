@@ -3,6 +3,7 @@ group: casa
 order: 9
 price: 13
 color: '#24361f'
+glass: rocks
 taste: [spicy, herbal]
 line:
   es: "Mezcal con albahaca y un toque de picante."

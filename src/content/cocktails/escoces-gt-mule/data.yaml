@@ -3,6 +3,7 @@ group: casa
 order: 10
 price: 11
 color: '#1f3a33'
+glass: highball
 taste: [fresh, ginger]
 line:
   es: "Whisky escocés, ginger beer y té verde."

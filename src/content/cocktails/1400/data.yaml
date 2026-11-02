@@ -3,6 +3,7 @@ group: casa
 order: 4
 price: 11
 color: '#5a3412'
+glass: rocks
 taste: [sweet, smooth]
 line:
   es: "Bourbon suave con miel y té."

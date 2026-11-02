@@ -3,6 +3,7 @@ group: casa
 order: 5
 price: 10
 color: '#3a2216'
+glass: coupe
 taste: [coffee, spiced]
 line:
   es: "Para los que piden café a medianoche."

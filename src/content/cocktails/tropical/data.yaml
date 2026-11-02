@@ -3,6 +3,7 @@ group: casa
 order: 11
 price: 13
 color: '#8f3412'
+glass: flute
 taste: [bubbly, citrus]
 line:
   es: "Burbujas con sabor a isla."

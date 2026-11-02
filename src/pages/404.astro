@@ -1,28 +1,26 @@
 ---
-import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import Deco from '../components/Deco.astro';
-import { site } from '../config/site';
+import Sparkle from '../components/Sparkle.astro';
+import Monogram from '../components/Monogram.astro';
+import DiamondRule from '../components/DiamondRule.astro';
 import { menuPath } from '../i18n';
-import logo from '../assets/logo.webp';
 ---
 <Base lang="es" title="Santurtzi La Cerra · Página no encontrada" noindex>
   <main class="nf">
     <div class="box">
-      <Deco />
-      <Image src={logo} alt={site.fullName} widths={[400]} sizes="200px" />
-      <p class="display">Esta página no existe.</p>
-      <p class="mono">This page doesn't exist</p>
-      <a class="pill pill-solid" href={menuPath('es')}>Ver la carta</a>
+      <Sparkle size={22} class="sp" />
+      <Monogram size={64} />
+      <p class="caps">Esta página no existe</p>
+      <DiamondRule label="This page doesn't exist" />
+      <a class="btn btn-solid" href={menuPath('es')}>Ver la carta</a>
     </div>
   </main>
 </Base>
 
 <style>
-  .nf { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: radial-gradient(ellipse 90% 55% at 50% 30%, #2a1c14, var(--night) 72%); }
-  .box { position: relative; width: min(100%, 420px); padding: 56px 28px; display: grid; justify-items: center; gap: 14px; text-align: center; }
-  .box :global(img) { width: 200px; height: auto; margin-bottom: 8px; }
-  .display { font-size: 26px; }
-  .mono { color: var(--gold); }
-  .pill { margin-top: 10px; text-decoration: none; }
+  .nf { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: radial-gradient(ellipse 90% 60% at 50% 35%, #4d111a, #3d0b12 55%, #1c0508); }
+  .box { position: relative; width: min(100%, 380px); padding: 48px 24px; display: grid; justify-items: center; gap: 18px; text-align: center; color: var(--gold); border: 1px solid var(--gold-line); outline: 1px solid var(--gold-line); outline-offset: 4px; }
+  .box :global(.sp) { position: absolute; top: -11px; background: #3d0b12; padding: 0 6px; width: 34px; color: var(--ivory); }
+  .caps { font-size: 24px; color: var(--ivory); letter-spacing: 0.06em; }
+  .btn { margin-top: 6px; }
 </style>

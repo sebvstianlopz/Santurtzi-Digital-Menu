@@ -4,68 +4,77 @@
  * Prints at 4×6 in; one per table and one at the bar.
  */
 import QRCode from 'qrcode';
-import { Image, getImage } from 'astro:assets';
+import { Image } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
+import Sparkle from '../../components/Sparkle.astro';
+import GlassLine from '../../components/GlassLine.astro';
+import DiamondRule from '../../components/DiamondRule.astro';
 import { site } from '../../config/site';
 import { menuPath } from '../../i18n';
 import logo from '../../assets/logo.webp';
 import sirenas from '../../assets/sirenas.png';
-import esquina from '../../assets/esquina.png';
 
 const url = new URL(menuPath('es'), Astro.site).href;
-const svg = await QRCode.toString(url, { type: 'svg', errorCorrectionLevel: 'M', margin: 0, color: { dark: '#100c0a', light: '#0000' } });
-const corner = await getImage({ src: esquina, width: 140, format: 'webp' });
+const svg = await QRCode.toString(url, { type: 'svg', errorCorrectionLevel: 'M', margin: 0, color: { dark: '#2a070c', light: '#0000' } });
 ---
 <Base lang="es" title="Santurtzi La Cerra · Código QR de la carta" noindex>
   <div class="toolbar">
     <p>Tarjeta para mesas, 4×6 in. El código abre <a href={url}>{url}</a></p>
-    <button class="pill pill-solid" type="button" onclick="window.print()"><Icon name="printer" size={16} />Imprimir</button>
+    <button class="btn btn-solid" type="button" onclick="window.print()"><Icon name="printer" size={16} />Imprimir</button>
   </div>
 
-  <article class="card-qr">
-    <div class="frame" aria-hidden="true" style={`--corner:url(${corner.src})`}><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+  <article class="poster">
+    <div class="rules" aria-hidden="true"></div>
+    <GlassLine glass="martini" size={74} class="g g1" />
+    <GlassLine glass="coupe" size={66} class="g g2" />
+    <Sparkle class="sp sp1" size={30} />
+    <Sparkle class="sp sp2" size={16} />
+    <Sparkle class="sp sp3" size={22} />
+    <p class="label kicker">{site.area}</p>
     <div class="logo-wrap">
       <Image class="ghost" src={sirenas} alt="" widths={[480]} sizes="240px" />
       <Image class="logo" src={logo} alt={site.fullName} widths={[400]} sizes="200px" />
     </div>
+    <DiamondRule label="La carta" class="rule" />
     <div class="qr" set:html={svg} />
-    <p class="scan display">Escanea la carta</p>
-    <p class="mono scan-en">Scan the menu</p>
-    <p class="mono where">{site.area}</p>
+    <p class="scan caps">Escanea la carta</p>
+    <p class="label scan-en">Scan the menu</p>
   </article>
 </Base>
 
 <style>
-  .toolbar { max-width: 720px; margin: 0 auto; padding: 20px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; color: var(--cream-dim); font-size: 14px; }
+  .toolbar { max-width: 720px; margin: 0 auto; padding: 20px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; color: var(--ivory-dim); font-size: 14px; }
   .toolbar a { color: var(--gold); word-break: break-all; }
-  .card-qr {
-    position: relative; width: 4in; max-width: calc(100vw - 32px); aspect-ratio: 4 / 6;
-    margin: 8px auto 48px; padding: 0.5in 0.4in 0.4in;
-    display: flex; flex-direction: column; align-items: center; text-align: center;
-    background: radial-gradient(ellipse 90% 50% at 50% 18%, #2a1c14, #100c0a 72%);
-    color: var(--cream); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+  .poster {
+    position: relative; overflow: hidden; width: 4in; max-width: calc(100vw - 32px); aspect-ratio: 4 / 6;
+    margin: 8px auto 48px; padding: 0.42in 0.4in 0.4in;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center;
+    background: radial-gradient(ellipse 100% 70% at 50% 30%, #4d111a, #3d0b12 55%, #24060b);
+    color: var(--ivory); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
     print-color-adjust: exact; -webkit-print-color-adjust: exact;
   }
-  .frame { position: absolute; inset: 8px; pointer-events: none; }
-  .frame::before { content: ''; position: absolute; inset: 1px; border: 1px solid rgba(212, 176, 112, 0.7); }
-  .frame i { position: absolute; width: 56px; height: 56px; background: var(--corner) 0 0 / 100% 100% no-repeat; }
-  .frame .tl { top: 0; left: 0; }
-  .frame .tr { top: 0; right: 0; transform: scaleX(-1); }
-  .frame .bl { bottom: 0; left: 0; transform: scaleY(-1); }
-  .frame .br { bottom: 0; right: 0; transform: scale(-1, -1); }
-  .logo-wrap { position: relative; display: grid; place-items: center; padding: 18px 0 8px; }
-  .logo-wrap :global(.ghost) { position: absolute; left: 50%; top: 50%; width: 240px; max-width: none; height: auto; transform: translate(-50%, -50%); opacity: 0.16; }
-  .logo-wrap :global(.logo) { position: relative; width: 190px; height: auto; }
-  .qr { width: 56%; margin: 18px 0 14px; padding: 10px; background: var(--cream); border-radius: 6px; }
+  .rules { position: absolute; inset: 10px; border: 1px solid var(--gold-line); outline: 1px solid var(--gold-line); outline-offset: -5px; pointer-events: none; }
+  .poster :global(.g) { position: absolute; color: var(--ivory); opacity: 0.9; }
+  .poster :global(.g1) { left: -14px; top: 16%; transform: rotate(-12deg); }
+  .poster :global(.g2) { right: -10px; bottom: 9%; transform: rotate(10deg); }
+  .poster :global(.sp) { position: absolute; color: var(--ivory); }
+  .poster :global(.sp1) { right: 12%; top: 7%; }
+  .poster :global(.sp2) { left: 16%; top: 8%; opacity: 0.8; }
+  .poster :global(.sp3) { left: 14%; bottom: 14%; }
+  .kicker { position: relative; color: var(--gold); font-size: 9px; margin-bottom: 4px; }
+  .logo-wrap { position: relative; display: grid; place-items: center; padding: 16px 0 6px; }
+  .logo-wrap :global(.ghost) { position: absolute; left: 50%; top: 50%; width: 230px; max-width: none; height: auto; transform: translate(-50%, -50%); opacity: 0.14; }
+  .logo-wrap :global(.logo) { position: relative; width: 180px; height: auto; }
+  .poster :global(.rule) { width: 70%; margin: 6px 0 2px; }
+  .qr { position: relative; width: 52%; margin: 14px 0 14px; padding: 10px; background: var(--ivory); border-radius: 2px; box-shadow: 0 0 0 1px var(--gold), 0 0 0 5px #3d0b12, 0 0 0 6px var(--gold-line); }
   .qr :global(svg) { width: 100%; height: auto; }
-  .scan { font-size: 28px; line-height: 1.1; }
-  .scan-en { color: var(--gold); margin-top: 4px; }
-  .where { margin-top: auto; color: var(--cream-dim); font-size: 10px; }
+  .scan { position: relative; font-size: 22px; letter-spacing: 0.08em; }
+  .scan-en { position: relative; color: var(--gold); margin-top: 6px; font-size: 9.5px; }
   @media print {
     @page { size: 4in 6in; margin: 0; }
-    :global(body) { background: #100c0a !important; }
+    :global(body) { background: #3d0b12 !important; }
     .toolbar { display: none; }
-    .card-qr { width: 4in; height: 6in; max-width: none; margin: 0; box-shadow: none; }
+    .poster { width: 4in; height: 6in; max-width: none; margin: 0; box-shadow: none; }
   }
 </style>

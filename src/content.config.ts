@@ -6,6 +6,7 @@ const text = z.object({ es: z.string(), en: z.string() });
 const word = z.union([z.string(), text]);
 
 export const groups = ['casa', 'mas'] as const;
+export const glasses = ['coupe', 'martini', 'flute', 'rocks', 'highball', 'wine'] as const;
 export const tastes = [
   'citrus', 'sweet', 'fruity', 'bubbly', 'spicy', 'coffee', 'fresh', 'floral',
   'creamy', 'herbal', 'smooth', 'spiced', 'tropical', 'ginger',
@@ -35,6 +36,8 @@ const cocktails = defineCollection({
       /** "infused" → "infusionado con …", "with" → "con …" */
       mix: z.enum(['infused', 'with']),
       adds: z.array(word).min(1),
+      /** Glass it's served in: drawn as line art until a photo is added. */
+      glass: z.enum(glasses).default('coupe'),
       /** Cut-out photo of the drink (transparent background works best). */
       photo: image().optional(),
       /** Height of the glass relative to the others (0.4–1), so a rocks glass looks shorter than a flute. */

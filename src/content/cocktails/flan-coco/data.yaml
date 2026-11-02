@@ -3,6 +3,7 @@ group: casa
 order: 7
 price: 10
 color: '#5e3a1c'
+glass: coupe
 taste: [creamy, sweet]
 line:
   es: "Un postre en copa: vainilla y coco."

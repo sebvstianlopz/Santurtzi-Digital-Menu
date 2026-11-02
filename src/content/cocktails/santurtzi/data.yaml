@@ -3,6 +3,7 @@ group: casa
 order: 1
 price: 12
 color: '#6b430c'
+glass: highball
 taste: [tropical, citrus]
 line:
   es: "El de la casa. Ron añejo con frutas de la isla."

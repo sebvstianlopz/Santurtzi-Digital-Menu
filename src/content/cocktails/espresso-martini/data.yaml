@@ -3,6 +3,7 @@ group: mas
 order: 1
 price: 11
 color: '#4a2a1b'
+glass: martini
 taste: [coffee, sweet]
 line:
   es: "Para que la noche empiece despierta."

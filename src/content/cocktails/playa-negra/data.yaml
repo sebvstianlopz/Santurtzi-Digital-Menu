@@ -3,6 +3,7 @@ group: casa
 order: 6
 price: 12
 color: '#4a0f18'
+glass: rocks
 taste: [fruity, citrus]
 line:
   es: "Arena negra, borde picante."

@@ -3,6 +3,7 @@ group: casa
 order: 8
 price: 11
 color: '#5b3020'
+glass: highball
 taste: [fruity, smooth]
 line:
   es: "Suave y frutal, para bajar el ritmo."

@@ -3,6 +3,7 @@ group: casa
 order: 2
 price: 12
 color: '#2f4234'
+glass: coupe
 taste: [floral, fresh]
 line:
   es: "Gin fresco y floral, con pepino y rosa."

@@ -1,19 +1,19 @@
 # Santurtzi Digital Menu
 
-The QR menu for **Santurtzi La Cerra**, a night bar in La Cerra, Santurce, San Juan, Puerto Rico. Guests scan the code on the table and see:
+The QR menu for **Santurtzi La Cerra**, a night bar in La Cerra, Santurce, San Juan, Puerto Rico. It's designed like a vintage speakeasy printed menu: dark jewel tones, gold and ivory linework, upright Bodoni capitals, sparkle stars, diamond rules and line-art glassware.
 
+Guests scan the code on the table and see:
 - **a cover:** a hallway of chandeliers leading to the logo
-- **the cocktails:** one per card, swiped like turning the pages of the printed menu
-- **a list view** filtered by taste ("¿Qué te apetece hoy?")
-- **wine & beer**
-- **pasta**, coming soon
+- **Cócteles** (burgundy): the printed-menu list with taste filters ("¿Qué te apetece hoy?"). Tapping a drink opens its card (photo or line-art glass plus the recipe), and you can swipe between drinks.
+- **Vinos y cervezas** (forest green): boxed tables with a separate price column
+- **Pasta** (espresso): coming soon
 
-Every drink has an **Agregar** button. The guest builds an order, taps **Mostrar al bartender**, and gets a large-print, cream-on-black summary in Spanish for the bartender to read.
+Every drink and price has a **+** button. The guest builds an order, taps **Mostrar al bartender**, and gets an ivory ticket with the drinks in Spanish.
 
 - **Live menu:** https://sebvstianlopz.github.io/Santurtzi-Digital-Menu/ (English: `/en/`)
 - **Printable table card with the QR code:** https://sebvstianlopz.github.io/Santurtzi-Digital-Menu/qr/
 
-Phones set to English open the English menu automatically, and the ES/EN button switches languages. The cover shows once per visit. Links like `…/#antonio`, `#vinos` or `#pasta` open straight to that drink or tab.
+Phones set to English open the English menu automatically, and the ES/EN button switches languages. The cover shows once per visit. Links like `…/#antonio`, `#vinos` or `#pasta` open straight to that drink or section.
 
 ## Edit the cocktails
 
@@ -35,12 +35,13 @@ base:                    # spirits, shown big on the recipe card
 mix: infused             # infused → "infusionado con …" · with → "con …"
 adds:
   - { es: Jengibre, en: Ginger }
+glass: flute             # coupe martini flute rocks highball wine: drawn as line art until there's a photo
 photo: ./photo.webp      # optional cut-out photo (transparent background)
 scale: 0.96              # glass height relative to the others (0.4–1)
 available: true          # false = "Agotado hoy" for the night
 ```
 
-- **No photo?** The card shows the recipe in an art-deco frame instead, as the printed menu does.
+- **No photo?** The card shows the drink's glass as line art above the recipe, in an art-deco frame.
 - **Adding a photo:** put a cut-out image with a transparent background in the folder and add `photo:` and `scale:`. The build resizes and compresses it.
 - **Add or remove a cocktail:** copy or delete a folder.
 
@@ -52,6 +53,8 @@ Names and prices are in `src/data/bar.ts`. An item has one `price`, or a `glass`
 
 - All interface text in both languages: `src/i18n/index.ts`
 - Logo, mermaids, chandelier, corner ornament and hallway photo: `src/assets/`
+- Ornaments (sparkle star, diamond rule, line-art glasses, monogram, filigree): `src/components/`
+- Section colours (burgundy, forest, espresso) and gold/ivory ink: the top of `src/styles/global.css`
 
 ## Run it locally
 

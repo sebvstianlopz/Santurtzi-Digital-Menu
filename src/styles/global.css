@@ -1,34 +1,38 @@
 :root {
   color-scheme: dark;
-  /* From the printed menu: espresso night, warm cream ink, brass gold. Mint is used only for focus and "coming soon". */
-  --night: #100c0a;
-  --deep: #080605;
-  --card: #17110e;
-  --cream: #f2d4b2;
-  --cream-dim: #b7a189;
-  --cream-faint: rgba(242, 212, 178, 0.32);
-  --line: rgba(242, 212, 178, 0.15);
-  --line-strong: rgba(242, 212, 178, 0.4);
-  --gold: #b8955a;
-  --gold-line: rgba(184, 149, 90, 0.45);
-  --mint: #8cc3ad;
+  /* Ink and linework shared by every section. */
+  --ivory: #f3e6cf;
+  --ivory-dim: #cdbb9f;
+  --ivory-faint: rgba(243, 230, 207, 0.3);
+  --line: rgba(243, 230, 207, 0.16);
+  --line-strong: rgba(243, 230, 207, 0.42);
+  --gold: #c9a55c;
+  --gold-line: rgba(201, 165, 92, 0.5);
+  --gold-foil: linear-gradient(180deg, #e9cf92 0%, #c9a55c 55%, #a8823d 100%);
+
+  /* Section jewel tones (switched by .app[data-section]). */
+  --burgundy: #3d0b12;
+  --burgundy-2: #4b1119;
+  --forest: #16231b;
+  --forest-2: #1e3025;
+  --espresso: #120d0a;
+  --espresso-2: #1b1410;
+  --deep: #0b0606;
+  --bg: var(--burgundy);
+  --surface: var(--burgundy-2);
 
   --f-display: 'Bodoni Moda Variable', 'Didot', 'Bodoni 72', Georgia, serif;
   --f-body: 'Jost Variable', 'Futura', 'Century Gothic', system-ui, sans-serif;
-  --f-mono: 'DM Mono', ui-monospace, Menlo, monospace;
 
   --top: env(safe-area-inset-top, 0px);
   --bot: env(safe-area-inset-bottom, 0px);
-  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-lift: cubic-bezier(0.7, 0, 0.2, 1);
 
   /* z-index scale */
-  --z-track: 1;
   --z-panel: 2;
   --z-top: 10;
   --z-orderbar: 11;
-  --z-scrim: 20;
-  --z-sheet: 21;
   --z-cover: 30;
   --z-pour: 40;
 }
@@ -40,11 +44,11 @@ body {
   margin: 0;
   min-height: 100dvh;
   background: var(--deep);
-  color: var(--cream);
+  color: var(--ivory);
   font-family: var(--f-body);
   font-weight: 350;
   font-size: 16px;
-  line-height: 1.5;
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
 }
 html.is-app, html.is-app body { height: 100%; overflow: hidden; overscroll-behavior: none; }
@@ -53,39 +57,43 @@ ul { margin: 0; padding: 0; list-style: none; }
 a { color: inherit; }
 button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
 img { display: block; max-width: 100%; }
-:focus-visible { outline: 1.5px solid var(--mint); outline-offset: 3px; border-radius: 6px; }
+:focus-visible { outline: 1.5px solid var(--gold); outline-offset: 3px; border-radius: 3px; }
 
 .visually-hidden {
   position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
-.mono { font-family: var(--f-mono); font-size: 11px; font-weight: 400; letter-spacing: 0.16em; text-transform: uppercase; }
-.display { font-family: var(--f-display); font-style: italic; font-weight: 400; }
-.price { font-family: var(--f-mono); letter-spacing: 0.02em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+/* Wide-tracked caps labels, as on printed menus: "D E  L A  C A S A" */
+.label { font-family: var(--f-body); font-size: 11px; font-weight: 500; letter-spacing: 0.3em; text-transform: uppercase; }
+/* Upright high-contrast serif caps for names and titles */
+.caps { font-family: var(--f-display); font-weight: 450; text-transform: uppercase; letter-spacing: 0.04em; }
+.italic { font-family: var(--f-display); font-style: italic; font-weight: 400; }
+.foil { background: var(--gold-foil); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.price { font-family: var(--f-body); font-weight: 450; letter-spacing: 0.04em; font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
 
-/* Film grain: keeps the dark surfaces from looking flat, like the printed card. */
+/* Film grain: keeps the dark surfaces from looking flat, like printed card stock. */
 .grain {
-  position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.07; mix-blend-mode: overlay;
+  position: absolute; inset: 0; pointer-events: none; z-index: 0; opacity: 0.08; mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Pill buttons */
-.pill {
+/* Buttons: crisp, square-cornered, like stamped card. */
+.btn {
   display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-  min-height: 44px; padding: 0 18px;
-  border-radius: 999px;
-  font-family: var(--f-mono); font-size: 11.5px; letter-spacing: 0.14em; text-transform: uppercase;
-  transition: transform 0.15s var(--ease), background-color 0.2s, color 0.2s, border-color 0.2s;
-  white-space: nowrap;
+  min-height: 46px; padding: 0 18px;
+  border-radius: 3px;
+  font-family: var(--f-body); font-size: 11.5px; font-weight: 500; letter-spacing: 0.24em; text-transform: uppercase;
+  transition: transform 0.15s var(--ease), background-color 0.2s, color 0.2s, box-shadow 0.2s;
+  white-space: nowrap; text-decoration: none;
 }
-.pill:active { transform: scale(0.97); }
-.pill-solid { background: var(--cream); color: var(--night); }
-.pill-line { box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--cream); }
+.btn:active { transform: scale(0.98); }
+.btn-solid { background: var(--ivory); color: var(--burgundy); }
+.btn-line { box-shadow: inset 0 0 0 1px var(--line-strong); color: var(--ivory); }
 @media (hover: hover) {
-  .pill-solid:hover { background: #f8e2c8; }
-  .pill-line:hover { box-shadow: inset 0 0 0 1px var(--cream); }
+  .btn-solid:hover { background: #fbf1df; }
+  .btn-line:hover { box-shadow: inset 0 0 0 1px var(--ivory); }
 }
-.pill[disabled] { opacity: 0.4; pointer-events: none; }
+.btn[disabled] { opacity: 0.4; pointer-events: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }

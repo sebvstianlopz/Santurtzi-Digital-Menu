@@ -1,0 +1,20 @@
+---
+/** Ornate corner flourishes framing a printed ticket (all four corners). */
+interface Props { class?: string }
+const { class: cls } = Astro.props;
+const corner = `<path d="M2 70V20C2 9 9 2 20 2H70"/><path d="M8 54V24C8 14 14 8 24 8H54"/><path d="M20 2C20 14 14 20 2 20"/><path d="M24 8c6 0 10 4 10 9s-4 8-8 8-6-3-6-6 2-4 4-4"/><path d="M8 24c0 6 4 10 9 10s8-4 8-8-3-6-6-6-4 2-4 4"/><path d="M54 8c4 0 7 3 7 6s-2 5-5 5"/><path d="M8 54c0 4 3 7 6 7s5-2 5-5"/><circle cx="2" cy="2" r="1.6" fill="currentColor"/>`;
+---
+<div class:list={['filigree', cls]} aria-hidden="true">
+  {['tl', 'tr', 'bl', 'br'].map((c) => (
+    <svg class={c} viewBox="0 0 72 72" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" set:html={corner} />
+  ))}
+</div>
+
+<style>
+  .filigree { position: absolute; inset: 0; pointer-events: none; }
+  svg { position: absolute; width: 64px; height: 64px; }
+  .tl { top: 0; left: 0; }
+  .tr { top: 0; right: 0; transform: scaleX(-1); }
+  .bl { bottom: 0; left: 0; transform: scaleY(-1); }
+  .br { bottom: 0; right: 0; transform: scale(-1, -1); }
+</style>

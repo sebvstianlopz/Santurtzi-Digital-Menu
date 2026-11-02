@@ -1,0 +1,19 @@
+---
+/** A hairline with a diamond (or a label between two diamonds) in the middle. */
+interface Props { label?: string; class?: string; as?: 'div' | 'li' | 'h3'; [attr: string]: unknown }
+const { label, class: cls, as: Tag = 'div', ...rest } = Astro.props;
+const diamond = '<svg width="7" height="7" viewBox="0 0 10 10" aria-hidden="true"><path d="M5 0 10 5 5 10 0 5Z" fill="currentColor"/></svg>';
+---
+<Tag class:list={['drule', cls]} {...rest}>
+  <span class="drule-line" aria-hidden="true"></span>
+  <Fragment set:html={diamond} />
+  {label && <span class="label drule-label">{label}</span>}
+  {label && <Fragment set:html={diamond} />}
+  <span class="drule-line" aria-hidden="true"></span>
+</Tag>
+
+<style>
+  .drule { display: flex; align-items: center; gap: 10px; color: var(--gold); }
+  .drule-line { flex: 1; height: 1px; background: var(--gold-line); }
+  .drule-label { color: var(--gold); white-space: nowrap; }
+</style>

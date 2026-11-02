@@ -3,6 +3,7 @@ group: casa
 order: 3
 price: 11
 color: '#6e1f3a'
+glass: flute
 taste: [bubbly, fruity]
 line:
   es: "Rosado, frío y con burbujas."

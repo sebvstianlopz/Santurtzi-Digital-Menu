@@ -44,3 +44,8 @@ export function orderables(cocktails: Cocktail[], lang: Lang) {
   }
   return items;
 }
+
+/** "Bacardí 8 · Piña · Naranja · Parcha" for the printed-menu list. */
+export function ingredientList(c: Cocktail, lang: Lang) {
+  return [...c.data.base, ...c.data.adds].map((w) => tx(w, lang)).join('\u00a0· ');
+}

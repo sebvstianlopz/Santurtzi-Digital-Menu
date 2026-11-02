@@ -1,6 +1,6 @@
 /**
- * Santurtzi menu: cover → swipeable cocktail cards (deep-linked by #slug), list view with taste
- * filters, wine & beer, and a "tu pedido" list kept on the phone to show the bartender.
+ * Santurtzi menu: cover → printed-menu list (taste filters) → swipeable drink detail (deep-linked by
+ * #slug), wine & beer, pasta, and a "tu pedido" list kept on the phone to show the bartender.
  */
 
 type Item = { name: string; es: string; note: string; esNote: string; price: number; ok: boolean };
@@ -61,7 +61,7 @@ function change(id: string, delta: number, from?: Element) {
   render();
   if (delta > 0) {
     bump(from ?? null);
-    bump($('#orderbar'));
+    bump(detail.open ? $('.mini-order') : $('#orderbar'));
     navigator.vibrate?.(10);
   }
 }
@@ -75,9 +75,9 @@ function render() {
     if (n) n.textContent = c ? String(c) : '';
   }
   const n = count();
-  const bar = $('#orderbar');
-  bar.hidden = n === 0;
-  $('[data-ob-count]').textContent = String(n);
+  $('#orderbar').hidden = n === 0;
+  for (const el of $$('[data-ob-count]')) el.textContent = String(n);
+  $('.mini-order').hidden = n === 0;
   $('[data-ob-total]').textContent = money(total());
 
   const ids = ordered();
@@ -135,7 +135,7 @@ function closeTop(animate = true) {
   if (!dlg) return;
   if (dlg.id === 'bartender') { wakeLock?.release().catch(() => {}); wakeLock = null; }
   dlg.style.transform = '';
-  if (!animate || reduce() || !dlg.classList.contains('sheet')) { dlg.close(); return; }
+  if (!animate || reduce() || dlg.id === 'bartender') { dlg.close(); return; }
   dlg.classList.add('closing');
   const done = () => { dlg.classList.remove('closing'); dlg.close(); };
   const t = setTimeout(done, 240);
@@ -177,38 +177,30 @@ for (const dlg of $$<HTMLDialogElement>('dialog')) {
   grab.addEventListener('pointercancel', end);
 }
 
-/* ---------------- Views ---------------- */
+/* ---------------- Sections (tabs) ---------------- */
 
-type View = 'cards' | 'list' | 'bar' | 'pasta';
-let view: View = 'cards';
-const viewTog = $('#viewTog');
+type Section = 'cocktails' | 'bar' | 'pasta';
+let section: Section = 'cocktails';
+const themeColor = { cocktails: '#3d0b12', bar: '#16231b', pasta: '#120d0a' };
+const panels: Record<Section, HTMLElement> = { cocktails: $('#cocktailsPanel'), bar: $('#barPanel'), pasta: $('#pastaPanel') };
 
-function setView(v: View) {
-  view = v;
-  $('#listPanel').hidden = v !== 'list';
-  $('#barPanel').hidden = v !== 'bar';
-  $('#pastaPanel').hidden = v !== 'pasta';
+function setSection(sec: Section, updateHash = true) {
+  section = sec;
+  app.dataset.section = sec;
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', themeColor[sec]);
+  for (const [k, el] of Object.entries(panels)) el.hidden = k !== sec;
   for (const tab of $$('[data-tab]')) {
-    const on = tab.dataset.tab === (v === 'cards' || v === 'list' ? 'cocktails' : v);
+    const on = tab.dataset.tab === sec;
     tab.setAttribute('aria-selected', String(on));
     tab.tabIndex = on ? 0 : -1;
   }
-  viewTog.style.visibility = v === 'bar' || v === 'pasta' ? 'hidden' : 'visible';
-  viewTog.setAttribute('aria-pressed', String(v === 'list'));
-  $('#viewLbl').textContent = v === 'list' ? data.s.cards : data.s.list;
-  const hash = v === 'bar' ? '#vinos' : v === 'pasta' ? '#pasta' : v === 'list' ? '#lista' : `#${data.ids[cur]}`;
-  history.replaceState(history.state, '', hash);
-  if (v === 'bar' || v === 'pasta' || v === 'list') {
-    const p = $(v === 'bar' ? '#barPanel' : v === 'pasta' ? '#pastaPanel' : '#listPanel');
-    p.scrollTop = 0;
-  }
+  panels[sec].scrollTop = 0;
+  if (updateHash) history.replaceState(history.state, '', sec === 'bar' ? '#vinos' : sec === 'pasta' ? '#pasta' : location.pathname + location.search);
 }
-viewTog.addEventListener('click', () => setView(view === 'list' ? 'cards' : 'list'));
 
-// Tabs: click, plus arrow keys between them.
 const tabs = $$('[data-tab]');
 tabs.forEach((tab, i) => {
-  tab.addEventListener('click', () => setView(tab.dataset.tab === 'cocktails' ? 'cards' : (tab.dataset.tab as View)));
+  tab.addEventListener('click', () => setSection(tab.dataset.tab as Section));
   tab.addEventListener('keydown', (e) => {
     const k = (e as KeyboardEvent).key;
     if (k !== 'ArrowRight' && k !== 'ArrowLeft') return;
@@ -218,9 +210,10 @@ tabs.forEach((tab, i) => {
   });
 });
 
-/* ---------------- Cards ---------------- */
+/* ---------------- Drink detail (swipe cards) ---------------- */
 
-let cur = 0;
+const detail = $<HTMLDialogElement>('#detail');
+let cur = -1;
 const hex = (h: string) => [1, 3, 5].map((k) => parseInt(h.slice(k, k + 2), 16));
 const mix = (a: string, b: string, t: number) => {
   const A = hex(a), B = hex(b);
@@ -229,12 +222,13 @@ const mix = (a: string, b: string, t: number) => {
 const dots = $$('.dots i');
 const [prevBtn, nextBtn] = $$<HTMLButtonElement>('[data-step]');
 let hashTimer = 0;
+let target: number | null = null;
 
 function onScroll() {
   const w = track.clientWidth || 1;
   const f = Math.max(0, Math.min(N - 1, track.scrollLeft / w));
   const lo = Math.floor(f), hi = Math.min(N - 1, lo + 1);
-  app.style.setProperty('--c1', mix(data.colors[lo], data.colors[hi], f - lo));
+  detail.style.setProperty('--c1', mix(data.colors[lo], data.colors[hi], f - lo));
   const c = Math.round(f);
   if (target !== null && Math.abs(f - target) < 0.01) target = null;
   if (c === cur) return;
@@ -244,7 +238,7 @@ function onScroll() {
   prevBtn.disabled = cur === 0;
   nextBtn.disabled = cur === N - 1;
   clearTimeout(hashTimer);
-  hashTimer = window.setTimeout(() => { if (view === 'cards') history.replaceState(history.state, '', `#${data.ids[cur]}`); }, 250);
+  hashTimer = window.setTimeout(() => { if (detail.open) history.replaceState(history.state, '', `#${data.ids[cur]}`); }, 250);
 }
 let ticking = false;
 track.addEventListener('scroll', () => {
@@ -252,47 +246,71 @@ track.addEventListener('scroll', () => {
   ticking = true;
   requestAnimationFrame(() => { ticking = false; onScroll(); });
 }, { passive: true });
+track.addEventListener('scrollend', () => { target = null; });
 
 function goTo(i: number, smooth = false) {
   track.scrollTo({ left: i * track.clientWidth, behavior: smooth && !reduce() ? 'smooth' : 'auto' });
   onScroll();
 }
-prevBtn.disabled = true;
 // Remember where a smooth scroll is heading, so quick repeated taps keep advancing.
-let target: number | null = null;
-track.addEventListener('scrollend', () => { target = null; });
 for (const b of [prevBtn, nextBtn]) {
   b.addEventListener('click', () => {
     target = Math.max(0, Math.min(N - 1, (target ?? cur) + Number(b.dataset.step)));
     goTo(target, true);
   });
 }
-addEventListener('resize', () => goTo(cur));
+addEventListener('resize', () => { if (detail.open) goTo(cur); });
 addEventListener('keydown', (e) => {
-  if (view !== 'cards' || stack.length || coverShown()) return;
-  if ((e.target as HTMLElement).closest('[role="tab"]')) return;
+  if (stack[stack.length - 1] !== detail) return;
   if (e.key === 'ArrowRight') nextBtn.click();
   if (e.key === 'ArrowLeft') prevBtn.click();
 });
 
-/* ---------------- List filters ---------------- */
+let listScroll = 0;
+function openDetail(id: string) {
+  const i = data.ids.indexOf(id);
+  if (i < 0) return;
+  listScroll = panels.cocktails.scrollTop;
+  openDialog(detail);
+  cur = -1;
+  goTo(i);
+  history.replaceState(history.state, '', `#${id}`);
+}
+// Closing returns focus to the tapped row, which can scroll the list; put it back where it was.
+detail.addEventListener('close', () => {
+  const restore = () => { panels.cocktails.scrollTop = listScroll; };
+  restore();
+  requestAnimationFrame(restore);
+  setTimeout(restore, 50);
+});
+
+/* ---------------- List filters + reveal ---------------- */
 
 function applyFilter(k: string) {
   for (const c of $$('[data-filter]')) c.setAttribute('aria-pressed', String(c.dataset.filter === k));
   let shown = 0;
-  for (const row of $$('.list .row')) {
+  for (const row of $$('.menu-list .item')) {
     const ok = !k || row.dataset.taste!.split(' ').includes(k);
     row.hidden = !ok;
-    if (ok) shown++;
+    if (ok) { shown++; row.classList.add('seen'); }
   }
-  for (const h of $$('.list .grp-h')) h.hidden = !$$(`.list .row[data-group="${h.dataset.group}"]`).some((r) => !r.hidden);
+  for (const h of $$('.menu-list .grp')) h.hidden = !$$(`.menu-list .item[data-group="${h.dataset.group}"]`).some((r) => !r.hidden);
   $('[data-empty]').hidden = shown > 0;
+}
+
+if ('IntersectionObserver' in window) {
+  const io = new IntersectionObserver((entries) => {
+    for (const en of entries) if (en.isIntersecting) { en.target.classList.add('seen'); io.unobserve(en.target); }
+  }, { rootMargin: '0px 0px -8% 0px' });
+  $$('.menu-list .item').forEach((el) => io.observe(el));
+} else {
+  $$('.menu-list .item').forEach((el) => el.classList.add('seen'));
 }
 
 /* ---------------- Clicks ---------------- */
 
 document.addEventListener('click', (e) => {
-  const el = (e.target as Element).closest<HTMLElement>('[data-add],[data-remove],[data-sheet],[data-close],[data-open-order],[data-show-bartender],[data-clear-order],[data-goto],[data-filter],[data-lang]');
+  const el = (e.target as Element).closest<HTMLElement>('[data-add],[data-remove],[data-sheet],[data-close],[data-open-order],[data-show-bartender],[data-clear-order],[data-open],[data-filter],[data-lang]');
   if (!el) return;
   const ds = el.dataset;
   if (ds.add) change(ds.add, 1, el);
@@ -303,10 +321,8 @@ document.addEventListener('click', (e) => {
   else if ('showBartender' in ds) openDialog($<HTMLDialogElement>('#bartender'));
   else if ('clearOrder' in ds) {
     if (confirm(data.s.confirmClear)) { order = {}; save(); render(); requestClose(); }
-  } else if (ds.goto) {
-    setView('cards');
-    goTo(data.ids.indexOf(ds.goto));
-  } else if (ds.filter !== undefined) applyFilter(ds.filter);
+  } else if (ds.open) openDetail(ds.open);
+  else if (ds.filter !== undefined) applyFilter(ds.filter);
   else if (ds.lang) {
     store.set('stz-lang', ds.lang);
     store.set('stz-in', '1', sessionStorage);
@@ -375,7 +391,10 @@ document.fonts?.ready.then(layoutHall);
 render();
 layoutHall();
 const h = decodeURIComponent(location.hash.slice(1));
-if (h === 'vinos') setView('bar');
-else if (h === 'pasta') setView('pasta');
-else if (h === 'lista') setView('list');
-else if (data.ids.includes(h)) { goTo(data.ids.indexOf(h)); }
+if (h === 'vinos') setSection('bar', false);
+else if (h === 'pasta') setSection('pasta', false);
+else if (data.ids.includes(h)) {
+  // Opened from a shared drink link: keep the plain menu underneath as the "back" target.
+  history.replaceState(null, '', location.pathname + location.search);
+  openDetail(h);
+}
