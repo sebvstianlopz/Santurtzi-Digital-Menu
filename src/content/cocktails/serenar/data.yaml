@@ -1,0 +1,15 @@
+name: Serenar
+group: casa
+order: 8
+price: 11
+color: '#5b3020'
+taste: [fruity, smooth]
+line:
+  es: "Suave y frutal, para bajar el ritmo."
+  en: "Soft and fruity, to slow things down."
+base:
+  - { es: Vodka de naranja, en: Orange vodka }
+  - Licor 43
+mix: infused
+adds:
+  - { es: Mezcla de rambután, en: Rambutan blend }

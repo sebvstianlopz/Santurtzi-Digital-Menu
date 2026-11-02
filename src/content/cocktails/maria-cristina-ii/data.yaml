@@ -1,0 +1,16 @@
+name: María Cristina II
+group: casa
+order: 9
+price: 13
+color: '#24361f'
+taste: [spicy, herbal]
+line:
+  es: "Mezcal con albahaca y un toque de picante."
+  en: "Mezcal with basil and a touch of heat."
+base: [Mezcal]
+mix: with
+adds:
+  - { es: Albahaca, en: Basil }
+  - { es: Chile serrano, en: Serrano pepper }
+  - { es: Lima, en: Lime }
+  - { es: Caléndula, en: Calendula }

@@ -1,0 +1,24 @@
+---
+/** Art-deco corner brackets from the printed menu, framing a box on all four sides. */
+interface Props { class?: string }
+const { class: cls } = Astro.props;
+const corner = (c: string) => c;
+---
+<div class:list={['deco', cls]} aria-hidden="true">
+  {['tl', 'tr', 'bl', 'br'].map((c) => (
+    <svg class={corner(c)} viewBox="0 0 34 34" fill="none" stroke="currentColor" stroke-width="1.2">
+      <path d="M1 34V1h33" /><path d="M7 34V7h27" />
+      <rect x="1" y="1" width="9" height="9" fill="currentColor" stroke="none" /><rect x="10" y="10" width="7" height="7" />
+    </svg>
+  ))}
+</div>
+
+<style>
+  .deco { position: absolute; inset: 0; pointer-events: none; color: var(--gold); }
+  .deco::before { content: ''; position: absolute; inset: 3px; border: 1px solid var(--gold-line); }
+  svg { position: absolute; width: 34px; height: 34px; }
+  .tl { top: 0; left: 0; }
+  .tr { top: 0; right: 0; transform: scaleX(-1); }
+  .bl { bottom: 0; left: 0; transform: scaleY(-1); }
+  .br { bottom: 0; right: 0; transform: scale(-1, -1); }
+</style>

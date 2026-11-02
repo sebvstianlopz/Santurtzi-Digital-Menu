@@ -1,18 +1,28 @@
 ---
+import { Image } from 'astro:assets';
 import Base from '../layouts/Base.astro';
+import Deco from '../components/Deco.astro';
 import { site } from '../config/site';
 import { menuPath } from '../i18n';
+import logo from '../assets/logo.webp';
 ---
-<Base lang="es" title="Santurtzi · Página no encontrada" noindex>
+<Base lang="es" title="Santurtzi La Cerra · Página no encontrada" noindex>
   <main class="nf">
-    <h1 class="serif">{site.name}</h1>
-    <p>Esta página no existe. · This page doesn't exist.</p>
-    <a class="btn btn-primary" href={menuPath('es')}>Ver el menú · See the menu</a>
+    <div class="box">
+      <Deco />
+      <Image src={logo} alt={site.fullName} widths={[400]} sizes="200px" />
+      <p class="display">Esta página no existe.</p>
+      <p class="mono">This page doesn't exist</p>
+      <a class="pill pill-solid" href={menuPath('es')}>Ver la carta</a>
+    </div>
   </main>
 </Base>
 
 <style>
-  .nf { min-height: 100dvh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 24px 16px; text-align: center; }
-  h1 { font-size: 56px; font-weight: 500; letter-spacing: -0.02em; }
-  p { color: var(--muted); }
+  .nf { min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; background: radial-gradient(ellipse 90% 55% at 50% 30%, #2a1c14, var(--night) 72%); }
+  .box { position: relative; width: min(100%, 420px); padding: 56px 28px; display: grid; justify-items: center; gap: 14px; text-align: center; }
+  .box :global(img) { width: 200px; height: auto; margin-bottom: 8px; }
+  .display { font-size: 26px; }
+  .mono { color: var(--gold); }
+  .pill { margin-top: 10px; text-decoration: none; }
 </style>

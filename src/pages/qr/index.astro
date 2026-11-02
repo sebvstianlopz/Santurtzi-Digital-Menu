@@ -1,67 +1,71 @@
 ---
 /**
- * Printable table card with the menu QR code. Print it at 4×6 in (or let the printer scale it),
- * one per table and one at the bar.
+ * Printable table card with the menu QR code, in the style of the printed menu.
+ * Prints at 4×6 in; one per table and one at the bar.
  */
 import QRCode from 'qrcode';
+import { Image, getImage } from 'astro:assets';
 import Base from '../../layouts/Base.astro';
 import Icon from '../../components/Icon.astro';
 import { site } from '../../config/site';
 import { menuPath } from '../../i18n';
+import logo from '../../assets/logo.webp';
+import sirenas from '../../assets/sirenas.png';
+import esquina from '../../assets/esquina.png';
 
 const url = new URL(menuPath('es'), Astro.site).href;
-const svg = await QRCode.toString(url, {
-  type: 'svg',
-  errorCorrectionLevel: 'M',
-  margin: 0,
-  color: { dark: '#111111', light: '#0000' },
-});
+const svg = await QRCode.toString(url, { type: 'svg', errorCorrectionLevel: 'M', margin: 0, color: { dark: '#100c0a', light: '#0000' } });
+const corner = await getImage({ src: esquina, width: 140, format: 'webp' });
 ---
-<Base lang="es" title="Santurtzi · Código QR del menú" noindex>
+<Base lang="es" title="Santurtzi La Cerra · Código QR de la carta" noindex>
   <div class="toolbar">
-    <p>Tarjeta para mesas · imprime a 4×6 in. El código abre <a href={url}>{url}</a></p>
-    <button class="btn btn-primary" type="button" onclick="window.print()"><Icon name="printer" size={18} />Imprimir</button>
+    <p>Tarjeta para mesas, 4×6 in. El código abre <a href={url}>{url}</a></p>
+    <button class="pill pill-solid" type="button" onclick="window.print()"><Icon name="printer" size={16} />Imprimir</button>
   </div>
 
   <article class="card-qr">
-    <p class="eyebrow">Bar de copas · {site.street}</p>
-    <h1 class="serif">{site.name}</h1>
+    <div class="frame" aria-hidden="true" style={`--corner:url(${corner.src})`}><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+    <div class="logo-wrap">
+      <Image class="ghost" src={sirenas} alt="" widths={[480]} sizes="240px" />
+      <Image class="logo" src={logo} alt={site.fullName} widths={[400]} sizes="200px" />
+    </div>
     <div class="qr" set:html={svg} />
-    <p class="scan serif">Escanea el menú</p>
-    <p class="scan-en">Scan the menu</p>
-    <p class="what">Fotos, ingredientes y precios de cada trago.<br />Photos, ingredients &amp; prices for every drink.</p>
-    <p class="url">{url.replace(/^https?:\/\//, '')}</p>
+    <p class="scan display">Escanea la carta</p>
+    <p class="mono scan-en">Scan the menu</p>
+    <p class="mono where">{site.area}</p>
   </article>
 </Base>
 
 <style>
-  .toolbar {
-    max-width: 720px; margin: 0 auto; padding: 20px 16px;
-    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px;
-    color: var(--muted); font-size: 14px;
-  }
-  .toolbar a { color: var(--accent); word-break: break-all; }
+  .toolbar { max-width: 720px; margin: 0 auto; padding: 20px 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; color: var(--cream-dim); font-size: 14px; }
+  .toolbar a { color: var(--gold); word-break: break-all; }
   .card-qr {
-    width: 4in; max-width: calc(100vw - 32px); aspect-ratio: 4 / 6;
-    margin: 8px auto 48px; padding: 0.4in 0.35in;
+    position: relative; width: 4in; max-width: calc(100vw - 32px); aspect-ratio: 4 / 6;
+    margin: 8px auto 48px; padding: 0.5in 0.4in 0.4in;
     display: flex; flex-direction: column; align-items: center; text-align: center;
-    background: #f6f1e7; color: #111;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    background: radial-gradient(ellipse 90% 50% at 50% 18%, #2a1c14, #100c0a 72%);
+    color: var(--cream); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    print-color-adjust: exact; -webkit-print-color-adjust: exact;
   }
-  .eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: #5b554c; }
-  h1 { font-size: 46px; font-weight: 500; letter-spacing: -0.02em; margin-top: 6px; }
-  .qr { width: 62%; margin: 22px 0 18px; padding: 10px; background: #fff; border-radius: 10px; }
+  .frame { position: absolute; inset: 8px; pointer-events: none; }
+  .frame::before { content: ''; position: absolute; inset: 1px; border: 1px solid rgba(212, 176, 112, 0.7); }
+  .frame i { position: absolute; width: 56px; height: 56px; background: var(--corner) 0 0 / 100% 100% no-repeat; }
+  .frame .tl { top: 0; left: 0; }
+  .frame .tr { top: 0; right: 0; transform: scaleX(-1); }
+  .frame .bl { bottom: 0; left: 0; transform: scaleY(-1); }
+  .frame .br { bottom: 0; right: 0; transform: scale(-1, -1); }
+  .logo-wrap { position: relative; display: grid; place-items: center; padding: 18px 0 8px; }
+  .logo-wrap :global(.ghost) { position: absolute; left: 50%; top: 50%; width: 240px; max-width: none; height: auto; transform: translate(-50%, -50%); opacity: 0.16; }
+  .logo-wrap :global(.logo) { position: relative; width: 190px; height: auto; }
+  .qr { width: 56%; margin: 18px 0 14px; padding: 10px; background: var(--cream); border-radius: 6px; }
   .qr :global(svg) { width: 100%; height: auto; }
-  .scan { font-size: 24px; font-weight: 560; }
-  .scan-en { font-size: 14px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #5b554c; margin-top: 2px; }
-  .what { margin-top: auto; font-size: 11px; line-height: 1.5; color: #5b554c; }
-  .url { margin-top: 8px; font-size: 9px; color: #5b554c; word-break: break-all; }
-
+  .scan { font-size: 28px; line-height: 1.1; }
+  .scan-en { color: var(--gold); margin-top: 4px; }
+  .where { margin-top: auto; color: var(--cream-dim); font-size: 10px; }
   @media print {
     @page { size: 4in 6in; margin: 0; }
-    :global(body) { background: #fff !important; }
+    :global(body) { background: #100c0a !important; }
     .toolbar { display: none; }
-    .card-qr { width: 4in; height: 6in; max-width: none; margin: 0; border-radius: 0; box-shadow: none; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    .card-qr { width: 4in; height: 6in; max-width: none; margin: 0; box-shadow: none; }
   }
 </style>

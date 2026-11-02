@@ -1,159 +1,312 @@
 ---
+import { Image, getImage } from 'astro:assets';
 import Base from '../layouts/Base.astro';
-import DrinkCard from '../components/DrinkCard.astro';
-import DrinkSheet from '../components/DrinkSheet.astro';
+import '../styles/menu.css';
+import Deco from '../components/Deco.astro';
 import Icon from '../components/Icon.astro';
-import { getMenu } from '../utils/drinks';
+import { getCocktails, recipeLine, orderables } from '../utils/menu';
+import { bar } from '../data/bar';
+import { tastes } from '../content.config';
 import { site, type Lang } from '../config/site';
-import { t, tx, menuPath, formatTime } from '../i18n';
+import { t, tx, menuPath, formatPrice } from '../i18n';
+import logo from '../assets/logo.webp';
+import sirenas from '../assets/sirenas.png';
+import esquina from '../assets/esquina.png';
+import chandelier from '../assets/chandelier.webp';
+import pasillo from '../assets/pasillo.webp';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
 const d = t(lang);
 const other: Lang = lang === 'es' ? 'en' : 'es';
-const { sections, byId, all } = await getMenu();
+const cocktails = await getCocktails();
+const N = cocktails.length;
+const pad = (n: number) => String(n).padStart(2, '0');
+const filters = (['citrus', 'sweet', 'fruity', 'bubbly', 'spicy', 'coffee', 'fresh', 'creamy', 'smooth'] as const).filter((k) =>
+  cocktails.some((c) => c.data.taste.includes(k)),
+);
+void tastes;
 
-const filterChips = [
-  ...(['refrescante', 'citrico', 'dulce', 'afrutado', 'amargo', 'cremoso'] as const).map((f) => ({ key: `flavor:${f}`, label: d.flavor[f] })),
-  { key: 'strength:zero', label: d.filter.zero },
-  { key: 'strength:light', label: d.filter.light },
-  { key: 'strength:strong', label: d.filter.strong },
-];
+const chand = await getImage({ src: chandelier, width: 380, format: 'webp' });
+const hall = await getImage({ src: pasillo, width: 960, format: 'webp' });
+const corner = await getImage({ src: esquina, width: 172, format: 'webp' });
 
-// Everything the client script needs: names (plus the Spanish name for the bartender), prices, strings.
-const es = t('es');
 const data = {
   lang,
   locale: d.htmlLang,
   currency: site.currency,
-  timeZone: site.timeZone,
-  hours: site.hours,
-  drinks: Object.fromEntries(
-    all.map((x) => [x.id, { name: tx(x.data.name, lang), es: tx(x.data.name, 'es'), price: x.data.price, size: x.data.size ?? '', ok: x.data.available }]),
-  ),
+  colors: cocktails.map((c) => c.data.color),
+  ids: cocktails.map((c) => c.id),
+  items: orderables(cocktails, lang),
   s: {
-    status: d.status,
-    days: d.footer.days,
-    results: [d.results(1), d.results(2).replace('2', '{n}')],
     items: [d.order.items(1), d.order.items(2).replace('2', '{n}')],
-    inOrder: d.inOrder(0).replace('0', '{n}'),
-    remove: d.remove,
+    esItems: [t('es').order.items(1), t('es').order.items(2).replace('2', '{n}')],
+    remove: d.order.remove,
     add: d.add,
     confirmClear: d.order.confirmClear,
+    list: d.view.list,
+    cards: d.view.cards,
   },
-  esItems: [es.order.items(1), es.order.items(2).replace('2', '{n}')],
 };
 ---
-<Base lang={lang}>
-  {lang === 'es' && (
-    <script is:inline slot="head" define:vars={{ en: menuPath('en') }}>
+<Base lang={lang} app>
+  <script is:inline slot="head" define:vars={{ en: lang === 'es' ? menuPath('en') : '' }}>
+    (function () {
+      var h = document.documentElement;
       try {
-        if (!localStorage.getItem('stz-lang') && /^en\b/i.test(navigator.language || '')) location.replace(en + location.hash);
+        if (en && !localStorage.getItem('stz-lang') && /^en\b/i.test(navigator.language || '')) { location.replace(en + location.hash); return; }
+        if (sessionStorage.getItem('stz-in') || location.hash) h.classList.add('in');
       } catch (e) {}
-    </script>
-  )}
+    })();
+  </script>
 
-  <header class="top wrap">
-    <div class="brand">
-      <p class="eyebrow">{d.tagline} · {site.street}, {site.area}</p>
-      <h1 class="serif">{site.name}</h1>
-      <p class="status" data-status hidden><i aria-hidden="true"></i><span></span></p>
-    </div>
-    <a class="lang" href={menuPath(other)} data-lang={other} hreflang={other} aria-label={d.switchAria}>{d.switchLabel}</a>
-  </header>
+  <div class="app" id="app" style={`--c1:${cocktails[0].data.color}`}>
+    <div class="room" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
 
-  <div class="wrap"><p class="hint">{d.hint}</p></div>
-
-  <nav class="catnav" aria-label={d.menuNav}>
-    <ul class="wrap">
-      {sections.map((s) => (
-        <li><a href={`#cat-${s.category}`} data-nav={s.category}>{d.category[s.category].name}</a></li>
-      ))}
-    </ul>
-  </nav>
-
-  <main class="wrap">
-    <div class="filters" role="group" aria-label={d.filtersLabel}>
-      <div class="chips-row">
-        {filterChips.map((c) => (
-          <button type="button" class="fchip" data-filter={c.key} aria-pressed="false">{c.label}</button>
-        ))}
+    <!-- Cover: the first thing a guest sees after scanning. Shown once per visit. -->
+    <section class="cover" id="cover" aria-label={site.fullName}>
+      <div class="cover-light" aria-hidden="true"></div>
+      <div class="hall" id="hall" aria-hidden="true">
+        <span class="vp" id="vp"></span>
+        <svg id="hallLines" preserveAspectRatio="none"></svg>
+        {[0, 1, 2, 3, 4].map((k) => <img class="ch" src={chand.src} alt="" decoding="async" fetchpriority={k === 0 ? 'high' : 'low'} />)}
       </div>
-      <p class="filter-status" data-filter-status hidden>
-        <span data-results aria-live="polite"></span>
-        <button type="button" class="clear" data-clear-filters>{d.clear}</button>
-      </p>
-    </div>
+      <div class="frame" aria-hidden="true" style={`--corner:url(${corner.src})`}><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+      <div class="cover-mid">
+        <div class="logo-wrap">
+          <Image class="ghost" src={sirenas} alt="" widths={[400, 720]} sizes="360px" loading="eager" />
+          <Image class="logo" src={logo} alt={site.fullName} widths={[280, 520]} sizes="260px" loading="eager" />
+        </div>
+        <p class="welcome display">{d.welcome}</p>
+        <p class="mono offer">{d.offer}</p>
+      </div>
+      <button class="pill pill-solid open" id="open" type="button">
+        {d.open}
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg>
+      </button>
+      <p class="mono where">{site.area}</p>
+    </section>
 
-    {sections.map((s, si) => (
-      <section class="cat" id={`cat-${s.category}`} data-cat={s.category} aria-labelledby={`h-${s.category}`}>
-        <header class="cat-head">
-          <h2 class="serif" id={`h-${s.category}`}>{d.category[s.category].name}</h2>
-          <p>{d.category[s.category].sub}</p>
-        </header>
-        <div class="list">
-          {s.drinks.map((drink, i) => <DrinkCard drink={drink} lang={lang} eager={si === 0 && i < 3} />)}
+    <header class="top">
+      <div class="top-row">
+        <a href={menuPath(lang)} class="brand" aria-label={site.fullName}>
+          <Image src={logo} alt="" widths={[100, 200]} sizes="96px" loading="eager" />
+        </a>
+        <div class="top-r">
+          <button class="viewtog mono" id="viewTog" type="button" aria-pressed="false">
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true" class="ic-list"><path d="M2 4h12M2 8h12M2 12h12" /></svg>
+            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true" class="ic-cards"><rect x="3" y="2" width="10" height="12" rx="1.5" /></svg>
+            <span id="viewLbl">{d.view.list}</span>
+          </button>
+          <a class="lang mono" href={menuPath(other)} data-lang={other} hreflang={other} aria-label={d.switchAria}>{d.switchLabel}</a>
+        </div>
+      </div>
+      <nav class="tabs" role="tablist" aria-label={site.name}>
+        <button class="tab display" role="tab" type="button" data-tab="cocktails" aria-selected="true" aria-controls="cocktails">{d.tabs.cocktails}</button>
+        <button class="tab display" role="tab" type="button" data-tab="bar" aria-selected="false" aria-controls="barPanel">{d.tabs.bar}</button>
+        <button class="tab display" role="tab" type="button" data-tab="pasta" aria-selected="false" aria-controls="pastaPanel">{d.tabs.pasta}</button>
+      </nav>
+    </header>
+
+    <main class="main" id="main">
+      <!-- One drink per card, swipe like turning pages. -->
+      <section class="cocktails" id="cocktails" aria-roledescription="carousel" aria-label={d.tabs.cocktails}>
+        <div class="pager">
+          <div class="dots" aria-hidden="true">{cocktails.map((_, i) => <i class:list={{ on: i === 0 }}></i>)}</div>
+          <div class="step">
+            <button type="button" class="arrow" data-step="-1" aria-label={d.prev}><Icon name="back" size={16} /></button>
+            <span class="mono count" aria-live="polite"><span id="cur">01</span> / {pad(N)}</span>
+            <button type="button" class="arrow" data-step="1" aria-label={d.next}><Icon name="arrow" size={16} /></button>
+          </div>
+        </div>
+        <div class="track" id="track">
+          {cocktails.map((c, i) => {
+            const v = c.data;
+            const base = v.base.map((w) => tx(w, lang));
+            return (
+              <article class:list={['card', { soldout: !v.available }]} id={`c-${c.id}`} data-id={c.id} aria-roledescription="slide" aria-label={`${v.name}, ${i + 1} / ${N}`}>
+                <div class="stage">
+                  {v.photo ? (
+                    <Image class="glass" src={v.photo} alt={`${v.name}: ${recipeLine(c, lang)}`} widths={[240, 360, 520]} sizes="(max-width: 480px) 46vw, 220px" loading={i < 2 ? 'eager' : 'lazy'} style={`--h:${v.scale}`} />
+                  ) : (
+                    <div class="recipe">
+                      <Deco />
+                      <p class="base display">{base.join(' & ')}</p>
+                      <span class="mono by">{v.mix === 'infused' ? (base.length > 1 ? d.infusedN : d.infused1) : d.with}</span>
+                      <ul class="inf">{v.adds.map((a) => <li>{tx(a, lang)}</li>)}</ul>
+                    </div>
+                  )}
+                </div>
+                <div class="info">
+                  <span class="mono grp">{!v.available ? d.soldOut : d.group[v.group]}</span>
+                  <h2 class="display">{v.name}</h2>
+                  <p class="line">{tx(v.line, lang)}</p>
+                  <div class="taste">{v.taste.map((k) => <span>{d.taste[k]}</span>)}</div>
+                  <div class="info-row">
+                    <span class="price">{formatPrice(v.price, lang)}</span>
+                    <div class="acts">
+                      {v.photo && <button type="button" class="pill pill-line" data-sheet={c.id}>{d.ingredients}</button>}
+                      <button type="button" class="pill pill-solid add" data-add={c.id} aria-label={d.addAria(v.name)} disabled={!v.available}>
+                        <span class="plus" aria-hidden="true">+</span><span>{d.add}</span><span class="n" aria-hidden="true"></span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
         </div>
       </section>
-    ))}
-    <p class="empty" data-empty hidden>{d.noResults}</p>
-  </main>
 
-  <footer class="foot wrap">
-    <p class="foot-name serif">{site.name}</p>
-    <p class="addr">{site.street}, {site.area}, {site.region}</p>
-    <div class="foot-links">
-      <a class="btn btn-ghost" href={site.mapsUrl} target="_blank" rel="noopener"><Icon name="pin" size={18} />{d.footer.map}</a>
-      {site.instagram && (
-        <a class="btn btn-ghost" href={`https://instagram.com/${site.instagram}`} target="_blank" rel="noopener"><Icon name="insta" size={18} />@{site.instagram}</a>
-      )}
+      <section class="panel list-panel" id="listPanel" aria-label={d.view.list} hidden>
+        <div class="mood">
+          <p class="display">{d.mood}</p>
+          <div class="chips" role="group" aria-label={d.mood}>
+            <button type="button" data-filter="" aria-pressed="true">{d.all}</button>
+            {filters.map((k) => <button type="button" data-filter={k} aria-pressed="false">{d.taste[k]}</button>)}
+          </div>
+        </div>
+        <ul class="list">
+          {cocktails.map((c, i) => (
+            <>
+              {(i === 0 || cocktails[i - 1].data.group !== c.data.group) && <li class="grp-h mono" data-group={c.data.group}>{d.group[c.data.group]}</li>}
+              <li class="row" data-taste={c.data.taste.join(' ')} data-group={c.data.group}>
+                <button type="button" class="row-open" data-goto={c.id}>
+                  <span class="th">
+                    {c.data.photo ? <Image src={c.data.photo} alt="" widths={[64, 128]} sizes="48px" loading="lazy" /> : <span class="sw" style={`--a:${c.data.color}`}></span>}
+                  </span>
+                  <span class="row-text">
+                    <span class="row-name display">{c.data.name}</span>
+                    <span class="row-rec">{recipeLine(c, lang)}</span>
+                  </span>
+                  <span class="price">{formatPrice(c.data.price, lang)}</span>
+                </button>
+                <button type="button" class="row-add" data-add={c.id} aria-label={d.addAria(c.data.name)} disabled={!c.data.available}>
+                  <span class="plus" aria-hidden="true">+</span><span class="n" aria-hidden="true"></span>
+                </button>
+              </li>
+            </>
+          ))}
+          <li class="empty" data-empty hidden>{d.none}</li>
+        </ul>
+      </section>
+
+      <section class="panel bar-panel" id="barPanel" role="tabpanel" aria-label={d.tabs.bar} hidden>
+        {bar.map((sec) => (
+          <section class="bar-sec">
+            <h2 class="display">{tx(sec.title, lang)}{sec.note && <span class="mono">{tx(sec.note, lang)}</span>}</h2>
+            {sec.groups.map((g) => (
+              <>
+                {g.title ? (
+                  <div class="sub mono">
+                    <span>{tx(g.title, lang)}</span>
+                    {g.cols && <span class="cols"><span>{d.glass}</span><span>{d.bottle}</span></span>}
+                  </div>
+                ) : <div class="sub-gap"></div>}
+                <ul>
+                  {g.items.map((it) => {
+                    const prices = it.price != null ? [[`${sec.id}:${it.id}`, it.price, '']] : [
+                      ...(it.glass != null ? [[`${sec.id}:${it.id}:copa`, it.glass, d.glass]] : []),
+                      ...(it.bottle != null ? [[`${sec.id}:${it.id}:botella`, it.bottle, d.bottle]] : []),
+                    ];
+                    return (
+                      <li class:list={{ two: g.cols }}>
+                        <span class="n">{it.name}{it.origin && <small>{tx(it.origin, lang)}</small>}</span>
+                        <span class="lead" aria-hidden="true"></span>
+                        {(prices as [string, number, string][]).map(([id, p, unit]) => (
+                          <button type="button" class="p" data-add={id} aria-label={d.addAria(`${it.name}${unit ? ` (${unit})` : ''}`)}>
+                            <span class="price">{formatPrice(p, lang)}</span>
+                            <span class="dot" aria-hidden="true"><span class="plus">+</span><span class="n"></span></span>
+                          </button>
+                        ))}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            ))}
+          </section>
+        ))}
+        <div class="sign">
+          <Image src={sirenas} alt="" widths={[240]} sizes="120px" loading="lazy" />
+          <span class="mono">{d.cheers}</span>
+          <p>{d.footer}</p>
+        </div>
+      </section>
+
+      <section class="panel pasta-panel" id="pastaPanel" role="tabpanel" aria-label={d.tabs.pasta} hidden>
+        <div class="pasta-photo" style={`--img:url(${hall.src})`} aria-hidden="true"></div>
+        <div class="pasta-in">
+          <p class="amp display" aria-hidden="true"><span>&amp;</span><br />pasta</p>
+          <p class="pasta-text">{d.pasta.text}</p>
+          <span class="soon mono">{d.pasta.soon}</span>
+        </div>
+      </section>
+    </main>
+
+    <button class="orderbar" id="orderbar" type="button" data-open-order hidden>
+      <span class="ob-n" data-ob-count></span>
+      <span class="mono ob-label">{d.order.bar}</span>
+      <span class="price ob-total" data-ob-total></span>
+    </button>
+
+    <div class="pour" id="pour" aria-hidden="true">
+      <svg viewBox="0 0 120 150">
+        <defs>
+          <clipPath id="bowl"><path d="M16 40 C18 74, 102 74, 104 40 Z" /></clipPath>
+          <linearGradient id="drink" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0b45a" /><stop offset="1" stop-color="#b9452f" /></linearGradient>
+        </defs>
+        <g clip-path="url(#bowl)">
+          <g class="liquid"><rect x="0" y="44" width="120" height="40" fill="url(#drink)" /><ellipse cx="60" cy="44" rx="46" ry="3" fill="#ffd28a" opacity=".6" /></g>
+        </g>
+        <path d="M16 40 C18 74, 102 74, 104 40" fill="none" stroke="#b8955a" stroke-width="2" />
+        <ellipse cx="60" cy="40" rx="44" ry="4.5" fill="none" stroke="#b8955a" stroke-width="2" />
+        <path d="M60 67 V128" stroke="#b8955a" stroke-width="2.4" stroke-linecap="round" />
+        <ellipse cx="60" cy="130" rx="24" ry="4" fill="none" stroke="#b8955a" stroke-width="2" />
+        <g class="garnish"><circle cx="94" cy="33" r="9" fill="#9cc86a" stroke="#e8f2c8" stroke-width="1.4" /><path d="M94 24v18M85 33h18M88 27l12 12M100 27l-12 12" stroke="#e8f2c8" stroke-width=".8" /></g>
+      </svg>
+      <span class="mono">{d.preparing}</span>
     </div>
-    <div class="hours">
-      <h2>{d.footer.hours}</h2>
-      <ul>
-        {[1, 2, 3, 4, 5, 6, 0].map((i) => {
-          const h = site.hours[i];
-          return <li data-day={i}><span>{d.footer.days[i]}</span><span>{h ? `${formatTime(h.open, lang)} – ${formatTime(h.close, lang)}` : d.footer.closed}</span></li>;
-        })}
-      </ul>
-    </div>
-    <p class="fine">{d.footer.allergies}</p>
-    <p class="fine">{d.footer.responsibly}</p>
-  </footer>
+  </div>
 
-  <button class="orderbar" type="button" data-open-order hidden>
-    <span class="ob-count" data-ob-count></span>
-    <span class="ob-label">{d.order.bar}</span>
-    <span class="ob-total" data-ob-total></span>
-  </button>
-
-  {all.map((drink) => <DrinkSheet drink={drink} lang={lang} byId={byId} />)}
+  {cocktails.filter((c) => c.data.photo).map((c) => (
+    <dialog class="sheet" id={`s-${c.id}`} aria-labelledby={`sn-${c.id}`}>
+      <div class="grab" aria-hidden="true"></div>
+      <div class="sheet-head"><h3 class="display" id={`sn-${c.id}`}>{c.data.name}</h3><span class="price">{formatPrice(c.data.price, lang)}</span></div>
+      <p class="mono sheet-lbl">{d.ingredients}</p>
+      <ul class="ing">{[...c.data.base, ...c.data.adds].map((w) => <li>{tx(w, lang)}</li>)}</ul>
+      <div class="sheet-acts">
+        <button type="button" class="pill pill-solid" data-add={c.id} disabled={!c.data.available}><span class="plus" aria-hidden="true">+</span>{d.addToOrder}<span class="n" aria-hidden="true"></span></button>
+        <button type="button" class="pill pill-line" data-close>{d.close}</button>
+      </div>
+    </dialog>
+  ))}
 
   <dialog class="sheet order-sheet" id="order" aria-labelledby="order-title">
-    <span class="grabber" aria-hidden="true"></span>
-    <button class="sheet-close" type="button" data-close aria-label={d.sheet.close}><Icon name="x" /></button>
-    <div class="sheet-scroll">
-      <div class="order-body">
-        <h2 class="serif" id="order-title">{d.order.title}</h2>
-        <p class="order-empty" data-order-empty>{d.order.empty}</p>
-        <ul class="order-list" data-order-list></ul>
-      </div>
-    </div>
+    <div class="grab" aria-hidden="true"></div>
+    <div class="sheet-head"><h3 class="display" id="order-title">{d.order.title}</h3><span class="mono" data-order-count></span></div>
+    <p class="order-empty" data-order-empty>{d.order.empty}</p>
+    <ul class="order-list" data-order-list></ul>
     <div class="order-foot" data-order-foot>
-      <div class="order-total"><span>{d.order.total}</span><span class="price" data-order-total></span></div>
+      <div class="order-total"><span class="mono">{d.order.total}</span><span class="price" data-order-total></span></div>
       <p class="order-note">{d.order.note}</p>
-      <button class="btn btn-primary" type="button" data-show-bartender>{d.order.show}</button>
-      <button class="btn-text" type="button" data-clear-order><Icon name="trash" size={16} />{d.order.clear}</button>
+      <button type="button" class="pill pill-solid big" data-show-bartender>{d.order.show}</button>
+      <div class="order-more">
+        <button type="button" class="link mono" data-clear-order>{d.order.clear}</button>
+        <button type="button" class="link mono" data-close>{d.close}</button>
+      </div>
     </div>
   </dialog>
 
   <dialog class="bartender" id="bartender" aria-labelledby="bt-title">
     <div class="bt-inner">
-      <p class="bt-hint">{d.order.bartenderHint}</p>
-      <h2 class="serif" id="bt-title">{d.order.bartenderTitle}</h2>
+      <Deco class="bt-deco" />
+      <p class="mono bt-hint">{d.order.bartenderHint}</p>
+      <h2 class="display" id="bt-title">{d.order.bartenderTitle}</h2>
       <ul class="bt-list" data-bt-list></ul>
-      <div class="bt-total"><span data-bt-count></span><span data-bt-total></span></div>
-      <button class="btn btn-ghost" type="button" data-close><Icon name="back" size={18} />{d.order.back}</button>
+      <div class="bt-total"><span class="mono" data-bt-count></span><span class="price" data-bt-total></span></div>
+      <button type="button" class="pill bt-back" data-close>{d.order.back}</button>
     </div>
   </dialog>
 
@@ -162,130 +315,3 @@ const data = {
     import '../scripts/menu';
   </script>
 </Base>
-
-<style>
-  .top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; padding-top: 28px; padding-bottom: 8px; }
-  .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); }
-  h1 { font-size: clamp(44px, 13vw, 64px); font-weight: 500; letter-spacing: -0.02em; line-height: 1; margin-top: 8px; }
-  .status { display: flex; align-items: center; gap: 8px; margin-top: 12px; font-size: 14px; color: var(--muted); font-weight: 600; }
-  .status i { width: 8px; height: 8px; border-radius: 50%; background: var(--faint); }
-  .status.open i { background: var(--zero); box-shadow: 0 0 0 4px var(--zero-soft); }
-  .lang {
-    flex: none; min-width: 48px; height: 44px; padding: 0 14px;
-    display: grid; place-items: center;
-    border-radius: 999px; box-shadow: inset 0 0 0 1px var(--line-strong);
-    font-size: 14px; font-weight: 800; letter-spacing: 0.06em; text-decoration: none;
-  }
-
-  .hint { margin-top: 14px; font-size: 14px; color: var(--muted); max-width: 46ch; }
-
-  .catnav {
-    position: sticky; top: 0; z-index: 10;
-    margin-top: 18px;
-    background: rgba(12, 14, 19, 0.86);
-    backdrop-filter: blur(14px) saturate(1.2);
-    -webkit-backdrop-filter: blur(14px) saturate(1.2);
-    border-bottom: 1px solid var(--line);
-  }
-  .catnav ul { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; height: var(--header-h); align-items: center; }
-  .catnav ul::-webkit-scrollbar { display: none; }
-  .catnav a {
-    display: inline-flex; align-items: center; height: 36px; padding: 0 14px;
-    border-radius: 999px; white-space: nowrap; text-decoration: none;
-    font-size: 14px; font-weight: 700; color: var(--muted);
-    transition: background-color 0.2s, color 0.2s;
-  }
-  .catnav a.active { background: var(--text); color: var(--bg); }
-
-  .filters { padding: 16px 0 4px; }
-  .chips-row { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); }
-  .chips-row::-webkit-scrollbar { display: none; }
-  .fchip {
-    flex: none; height: 40px; padding: 0 14px;
-    border: 0; border-radius: 999px;
-    background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-strong);
-    font-size: 14px; font-weight: 600; color: var(--text);
-    transition: background-color 0.15s, color 0.15s;
-  }
-  .fchip[aria-pressed='true'] { background: var(--accent); color: var(--accent-ink); box-shadow: none; }
-  .filter-status { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; font-size: 14px; color: var(--muted); font-weight: 600; }
-  .clear { border: 0; background: none; color: var(--accent); font-weight: 700; padding: 10px 0 10px 12px; text-decoration: underline; text-underline-offset: 3px; }
-
-  .cat { padding-top: 28px; }
-  .cat[hidden] { display: none; }
-  .cat-head { margin-bottom: 14px; }
-  .cat-head h2 { font-size: 28px; font-weight: 500; letter-spacing: -0.01em; }
-  .cat-head p { margin-top: 4px; font-size: 14px; color: var(--muted); }
-  .list { display: flex; flex-direction: column; gap: 10px; }
-  .empty { padding: 48px 0; text-align: center; color: var(--muted); }
-
-  .foot { margin-top: 56px; padding-top: 32px; padding-bottom: 120px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
-  .foot-name { font-size: 26px; font-weight: 500; }
-  .addr { color: var(--muted); font-size: 14px; }
-  .foot-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 8px 0; }
-  .foot-links .btn { min-height: 44px; font-size: 14px; }
-  .hours { margin: 8px 0; }
-  .hours h2 { font-size: 12px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); margin-bottom: 6px; }
-  .hours li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; color: var(--muted); font-variant-numeric: tabular-nums; }
-  .hours li.today { color: var(--text); font-weight: 700; }
-  .fine { font-size: 13px; color: var(--faint); }
-
-  .orderbar {
-    position: fixed; z-index: 20;
-    left: 50%; bottom: calc(14px + env(safe-area-inset-bottom));
-    transform: translateX(-50%);
-    width: min(calc(100% - 2 * var(--gutter)), 420px);
-    height: 58px; padding: 0 8px 0 8px;
-    display: flex; align-items: center; gap: 12px;
-    border: 0; border-radius: 999px;
-    background: var(--accent); color: var(--accent-ink);
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5), 0 0 0 6px rgba(12, 14, 19, 0.5);
-    font-weight: 800; font-size: 16px;
-    animation: rise 0.3s var(--ease);
-  }
-  .orderbar[hidden] { display: none; }
-  .orderbar.bump { animation: pulse 0.35s var(--ease); }
-  .ob-count { min-width: 42px; height: 42px; padding: 0 10px; display: grid; place-items: center; border-radius: 999px; background: var(--accent-ink); color: var(--accent); font-variant-numeric: tabular-nums; }
-  .ob-label { flex: 1; text-align: left; }
-  .ob-total { padding-right: 14px; font-variant-numeric: tabular-nums; }
-  @keyframes rise { from { transform: translate(-50%, 120%); } }
-  @keyframes pulse { 40% { transform: translateX(-50%) scale(1.04); } }
-
-  .order-body { padding: 28px var(--gutter) 12px; }
-  .order-body h2 { font-size: 30px; font-weight: 500; margin-bottom: 12px; }
-  .order-empty { color: var(--muted); padding: 12px 0 24px; }
-  .order-sheet[data-has-items] .order-empty { display: none; }
-  .order-sheet:not([data-has-items]) .order-foot { display: none; }
-  .order-foot { padding: 12px var(--gutter) calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
-  .order-total { display: flex; justify-content: space-between; align-items: baseline; font-size: 18px; font-weight: 700; }
-  .order-total .price { font-size: 24px; }
-  .order-note { font-size: 13px; color: var(--faint); }
-  .btn-text { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border: 0; background: none; color: var(--muted); font-weight: 600; font-size: 14px; }
-
-  .bartender {
-    width: 100%; height: 100%; max-width: none; max-height: none;
-    margin: 0; padding: 0; border: 0;
-    background: #f6f1e7; color: #111;
-  }
-  .bartender[open] { display: block; }
-  .bartender::backdrop { background: #f6f1e7; }
-  .bt-inner { max-width: 640px; margin: 0 auto; min-height: 100%; padding: calc(24px + env(safe-area-inset-top)) 20px calc(24px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; gap: 16px; }
-  .bt-hint { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #5b554c; }
-  .bt-inner h2 { font-size: 40px; font-weight: 600; }
-  .bt-total { display: flex; justify-content: space-between; padding-top: 16px; border-top: 3px solid #111; font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums; }
-  .bartender .btn-ghost { background: #111; color: #f6f1e7; box-shadow: none; margin-top: auto; }
-</style>
-
-<style is:global>
-  /* Rows rendered by the client script. */
-  .order-list li { display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--line); }
-  .order-list .o-name { font-family: var(--serif); font-size: 19px; font-weight: 560; }
-  .order-list .o-meta { grid-column: 1; font-size: 13px; color: var(--faint); font-variant-numeric: tabular-nums; }
-  .order-list .o-step { grid-row: 1 / span 2; grid-column: 2; display: flex; align-items: center; gap: 8px; }
-  .order-list .o-qty { min-width: 24px; text-align: center; font-weight: 800; font-size: 18px; font-variant-numeric: tabular-nums; }
-  .bt-list li { display: flex; align-items: baseline; gap: 14px; padding: 12px 0; border-bottom: 1px solid #d8d0c2; }
-  .bt-list .bt-qty { font-size: 34px; font-weight: 800; min-width: 2.2ch; font-variant-numeric: tabular-nums; }
-  .bt-list .bt-name { flex: 1; font-size: 26px; font-weight: 700; line-height: 1.2; }
-  .bt-list .bt-sub { display: block; font-size: 15px; font-weight: 500; color: #5b554c; }
-  .bt-list .bt-price { font-size: 18px; font-weight: 600; color: #5b554c; font-variant-numeric: tabular-nums; }
-</style>

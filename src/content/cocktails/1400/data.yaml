@@ -1,0 +1,15 @@
+name: '1400'
+group: casa
+order: 4
+price: 11
+color: '#5a3412'
+taste: [sweet, smooth]
+line:
+  es: "Bourbon suave con miel y té."
+  en: "Smooth bourbon with honey and tea."
+base: [Bourbon]
+mix: infused
+adds:
+  - { es: Lima, en: Lime }
+  - { es: Té del atardecer, en: Sunset tea }
+  - { es: Miel, en: Honey }

@@ -1,0 +1,17 @@
+name: Santurtzi
+group: casa
+order: 1
+price: 12
+color: '#6b430c'
+taste: [tropical, citrus]
+line:
+  es: "El de la casa. Ron añejo con frutas de la isla."
+  en: "The house drink. Aged rum with island fruit."
+base: [Bacardí 8]
+mix: infused
+adds:
+  - { es: Piña, en: Pineapple }
+  - { es: Naranja, en: Orange }
+  - { es: Parcha, en: Passion fruit }
+  - { es: Lima, en: Lime }
+  - { es: Jengibre, en: Ginger }

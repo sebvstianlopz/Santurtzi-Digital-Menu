@@ -1,0 +1,15 @@
+name: Antonio
+group: casa
+order: 2
+price: 12
+color: '#2f4234'
+taste: [floral, fresh]
+line:
+  es: "Gin fresco y floral, con pepino y rosa."
+  en: "Fresh, floral gin with cucumber and rose."
+base: [Bombay Gin, St-Germain]
+mix: infused
+adds:
+  - { es: Limón, en: Lemon }
+  - { es: Capullos de rosa, en: Rose buds }
+  - { es: Pepino, en: Cucumber }

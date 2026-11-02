@@ -1,0 +1,15 @@
+name: Flan Coco
+group: casa
+order: 7
+price: 10
+color: '#5e3a1c'
+taste: [creamy, sweet]
+line:
+  es: "Un postre en copa: vainilla y coco."
+  en: "Dessert in a glass: vanilla and coconut."
+base:
+  - Bacardí 8
+  - { es: Vodka de vainilla, en: Vanilla vodka }
+mix: infused
+adds:
+  - { es: Leche de coco, en: Coconut milk }

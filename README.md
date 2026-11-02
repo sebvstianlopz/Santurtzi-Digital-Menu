@@ -1,69 +1,57 @@
 # Santurtzi Digital Menu
 
-The digital menu for **Santurtzi**, a night bar on Calle Cerra in San Juan, Puerto Rico. Guests scan the QR code on the table and see every drink with:
+The QR menu for **Santurtzi La Cerra**, a night bar in La Cerra, Santurce, San Juan, Puerto Rico. Guests scan the code on the table and see:
 
-- a photo
-- its ingredients and price
-- what makes it unique
+- **a cover:** a hallway of chandeliers leading to the logo
+- **the cocktails:** one per card, swiped like turning the pages of the printed menu
+- **a list view** filtered by taste ("¿Qué te apetece hoy?")
+- **wine & beer**
+- **pasta**, coming soon
 
-They tap **+** to build an order, then hit **"Mostrar al bartender"** to show a large-print summary. The bartender reads the order instead of answering questions.
+Every drink has an **Agregar** button. The guest builds an order, taps **Mostrar al bartender**, and gets a large-print, cream-on-black summary in Spanish for the bartender to read.
 
 - **Live menu:** https://sebvstianlopz.github.io/Santurtzi-Digital-Menu/ (English: `/en/`)
 - **Printable table card with the QR code:** https://sebvstianlopz.github.io/Santurtzi-Digital-Menu/qr/
 
-Phones set to English open the English menu automatically. Everyone else gets Spanish, and there's an ES/EN button on the page.
+Phones set to English open the English menu automatically, and the ES/EN button switches languages. The cover shows once per visit. Links like `…/#antonio`, `#vinos` or `#pasta` open straight to that drink or tab.
 
-> ⚠️ All 21 drinks, their prices, hours and the Instagram handle are **placeholders**. Replace them before printing the QR cards.
+## Edit the cocktails
 
-## Edit the menu
-
-Each drink is a folder in `src/content/drinks/<slug>/` containing a `data.yaml` file:
+Each cocktail is a folder in `src/content/cocktails/<slug>/` with a `data.yaml` file:
 
 ```yaml
-name: { es: Daiquirí de parcha, en: Passion Fruit Daiquiri }   # or just: name: Mojito
-category: casa          # casa | clasicos | sin-alcohol | cervezas | vinos | shots
-order: 2                # position inside its category
-price: 12
-size: 12 oz             # optional, shown next to the price
-signature: true         # "De la casa" badge
-seasonal: false         # "Temporada" badge
-available: true         # false = greyed out as "Agotado hoy" (stays visible)
-base: { es: Ron blanco puertorriqueño, en: Puerto Rican white rum }
-unique:                 # one line on the card: why pick this one
-  es: ...
-  en: ...
-description: { es: ..., en: ... }
-ingredients:
-  - { es: Pulpa de parcha, en: Passion fruit pulp }
-  - Campari             # same word in both languages
-flavor: [afrutado, citrico, dulce]   # 1–3 of: refrescante citrico dulce afrutado amargo herbal cremoso ahumado
-strength: 2             # 0 sin alcohol · 1 suave · 2 medio · 3 fuerte
-glass: coupe            # rocks highball coupe martini copa wine hurricane pint bottle shot
-contains: [coco]        # allergens: lacteos coco huevo gluten frutos-secos
-pairsWith: [margarita, pina-colada]  # slugs of other drinks ("Si te gusta este, prueba…")
-color: '#f2b632'        # used by the illustration while there's no photo
-garnish: passion        # lime lemon orange cherry mint pineapple coffee cinnamon passion none
-photo: ./foto.jpg       # optional, see below
+name: Perla Rosada
+group: casa              # casa = Cócteles de la casa · mas = Más cócteles
+order: 3                 # position in the swipe order
+price: 11
+color: '#6e1f3a'         # mood colour: tints the light behind the card
+taste: [bubbly, fruity]  # 1–3 of: citrus sweet fruity bubbly spicy coffee fresh floral creamy herbal smooth spiced tropical ginger
+line:                    # the short note on the card (keep the quotes)
+  es: "Rosado, frío y con burbujas."
+  en: "Pink, cold and sparkling."
+base:                    # spirits, shown big on the recipe card
+  - { es: Champán, en: Champagne }
+  - Bombay Gin           # same word in both languages
+mix: infused             # infused → "infusionado con …" · with → "con …"
+adds:
+  - { es: Jengibre, en: Ginger }
+photo: ./photo.webp      # optional cut-out photo (transparent background)
+scale: 0.96              # glass height relative to the others (0.4–1)
+available: true          # false = "Agotado hoy" for the night
 ```
 
-- **Add a drink:** copy a folder, rename it (the folder name is the slug used in links like `#mojito`), and edit `data.yaml`.
-- **Remove a drink:** delete its folder. Also delete its slug from any other drink's `pairsWith`, or the build will fail and tell you which one.
-- **Sold out tonight:** set `available: false`.
+- **No photo?** The card shows the recipe in an art-deco frame instead, as the printed menu does.
+- **Adding a photo:** put a cut-out image with a transparent background in the folder and add `photo:` and `scale:`. The build resizes and compresses it.
+- **Add or remove a cocktail:** copy or delete a folder.
 
-### Photos
+## Edit wine, sparkling and beer
 
-Until a drink has a photo, the menu draws an illustration from its `glass`, `color` and `garnish`. To use a real photo:
+Names and prices are in `src/data/bar.ts`. An item has one `price`, or a `glass` and a `bottle` price.
 
-1. Put the photo in the drink's folder, e.g. `src/content/drinks/mojito/foto.jpg`.
-2. Add `photo: ./foto.jpg` to that drink's `data.yaml`.
+## Text, logo and images
 
-The build resizes and compresses it automatically.
-
-For a consistent look, shoot every drink the same way: dark background, the same angle and the same distance, with the glass centered and some space around it. Portrait or square photos work best.
-
-### Bar details
-
-Name, address, hours, Instagram and the map link are in `src/config/site.ts`. All interface text in both languages is in `src/i18n/index.ts`.
+- All interface text in both languages: `src/i18n/index.ts`
+- Logo, mermaids, chandelier, corner ornament and hallway photo: `src/assets/`
 
 ## Run it locally
 
@@ -76,12 +64,8 @@ npm run build      # static site in dist/
 
 ## Deploy
 
-Pushing to `main` runs `.github/workflows/pages.yml`, which builds the menu and publishes it on GitHub Pages. The site address comes from GitHub, so the workflow works whatever the repository is called.
-
-One-time setup: in the repository on GitHub, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-
-To use a custom domain (e.g. `menu.santurtzipr.com`), add it under **Settings → Pages → Custom domain** and run the workflow again. The QR code on `/qr/` always points at the deployed address, so **reprint the cards after changing the domain**.
+Pushing to `main` runs `.github/workflows/pages.yml`, which builds and publishes the site on GitHub Pages. The site address comes from GitHub, so a custom domain only needs to be set under **Settings → Pages → Custom domain**. The QR code on `/qr/` always points at the deployed address, so **reprint the cards after changing the domain**.
 
 ## Print the QR cards
 
-Open `/qr/` and press **Imprimir**. The card is sized 4×6 in. Print one per table and one for the bar. Test-scan a printed card with a phone before laminating.
+Open `/qr/` and press **Imprimir**. The card is 4×6 in. Test-scan a printed card before laminating.

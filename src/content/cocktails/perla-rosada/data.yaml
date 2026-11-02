@@ -1,0 +1,19 @@
+name: Perla Rosada
+group: casa
+order: 3
+price: 11
+color: '#6e1f3a'
+taste: [bubbly, fruity]
+line:
+  es: "Rosado, frío y con burbujas."
+  en: "Pink, cold and sparkling."
+base:
+  - { es: Champán, en: Champagne }
+  - Bombay Gin
+mix: infused
+adds:
+  - { es: Jengibre, en: Ginger }
+  - { es: Lima, en: Lime }
+  - { es: Frambuesa, en: Raspberry }
+photo: ./photo.webp
+scale: 0.96

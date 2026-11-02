@@ -1,65 +1,48 @@
 /**
- * Menu interactivity: drink detail sheets (deep-linked by #slug), taste filters,
- * category scroll-spy, open/closed status and the "my order" list kept on the phone.
+ * Santurtzi menu: cover → swipeable cocktail cards (deep-linked by #slug), list view with taste
+ * filters, wine & beer, and a "tu pedido" list kept on the phone to show the bartender.
  */
 
-type DrinkInfo = { name: string; es: string; price: number; size: string; ok: boolean };
-type Hours = ({ open: string; close: string } | null)[];
+type Item = { name: string; es: string; note: string; esNote: string; price: number; ok: boolean };
 type Data = {
   lang: 'es' | 'en';
   locale: string;
   currency: string;
-  timeZone: string;
-  hours: Hours;
-  drinks: Record<string, DrinkInfo>;
-  esItems: [string, string];
-  s: {
-    status: { open: string; closed: string; until: string; opensAt: string; today: string; tomorrow: string };
-    days: string[];
-    results: [string, string];
-    items: [string, string];
-    inOrder: string;
-    remove: string;
-    add: string;
-    confirmClear: string;
-  };
+  colors: string[];
+  ids: string[];
+  items: Record<string, Item>;
+  s: { items: [string, string]; esItems: [string, string]; remove: string; add: string; confirmClear: string; list: string; cards: string };
 };
 
 const data: Data = JSON.parse(document.getElementById('menu-data')!.textContent!);
-const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel);
+const $ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => root.querySelector<T>(sel)!;
 const $$ = <T extends Element = HTMLElement>(sel: string, root: ParentNode = document) => [...root.querySelectorAll<T>(sel)];
+const reduce = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const plural = ([one, other]: [string, string], n: number) => (n === 1 ? one : other.replace('{n}', String(n)));
 const money = (n: number) =>
-  new Intl.NumberFormat(data.locale, {
-    style: 'currency',
-    currency: data.currency,
-    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
-  }).format(n);
+  new Intl.NumberFormat(data.locale, { style: 'currency', currency: data.currency, minimumFractionDigits: Number.isInteger(n) ? 0 : 2 }).format(n);
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
-
 const store = {
-  get(key: string): string | null {
-    try { return localStorage.getItem(key); } catch { return null; }
-  },
-  set(key: string, value: string | null) {
-    try { value === null ? localStorage.removeItem(key) : localStorage.setItem(key, value); } catch { /* private mode */ }
-  },
+  get(k: string, s: Storage = localStorage) { try { return s.getItem(k); } catch { return null; } },
+  set(k: string, v: string | null, s: Storage = localStorage) { try { v === null ? s.removeItem(k) : s.setItem(k, v); } catch { /* private mode */ } },
 };
+const N = data.ids.length;
+const app = $('#app');
+const track = $('#track');
 
 /* ---------------- Order ---------------- */
 
-const ORDER_KEY = 'stz-order';
+const ORDER_KEY = 'stz-pedido';
 let order: Record<string, number> = {};
 try {
-  const raw = JSON.parse(store.get(ORDER_KEY) ?? '{}');
-  for (const [id, n] of Object.entries(raw)) {
-    if (data.drinks[id] && typeof n === 'number' && n > 0) order[id] = Math.min(99, Math.floor(n));
+  for (const [id, n] of Object.entries(JSON.parse(store.get(ORDER_KEY) ?? '{}'))) {
+    if (data.items[id] && typeof n === 'number' && n > 0) order[id] = Math.min(99, Math.floor(n));
   }
 } catch { order = {}; }
-
 const save = () => store.set(ORDER_KEY, Object.keys(order).length ? JSON.stringify(order) : null);
 const count = () => Object.values(order).reduce((a, b) => a + b, 0);
-const total = () => Object.entries(order).reduce((a, [id, n]) => a + data.drinks[id].price * n, 0);
+const total = () => Object.entries(order).reduce((a, [id, n]) => a + data.items[id].price * n, 0);
+const ordered = () => Object.keys(data.items).filter((id) => order[id]);
 
 function bump(el: Element | null) {
   if (!el) return;
@@ -68,341 +51,331 @@ function bump(el: Element | null) {
   el.classList.add('bump');
 }
 
-function change(id: string, delta: number) {
-  if (!data.drinks[id] || (delta > 0 && !data.drinks[id].ok)) return;
+function change(id: string, delta: number, from?: Element) {
+  const it = data.items[id];
+  if (!it || (delta > 0 && !it.ok)) return;
   const n = Math.max(0, Math.min(99, (order[id] ?? 0) + delta));
   if (n) order[id] = n;
   else delete order[id];
   save();
   render();
   if (delta > 0) {
-    bump($(`.card [data-add="${id}"]`));
-    bump($('.orderbar'));
-    navigator.vibrate?.(12);
+    bump(from ?? null);
+    bump($('#orderbar'));
+    navigator.vibrate?.(10);
   }
 }
 
-const orderBar = $('.orderbar')!;
-const orderSheet = $<HTMLDialogElement>('#order')!;
-const orderList = $('[data-order-list]')!;
-const btList = $('[data-bt-list]')!;
-
 function render() {
-  const n = count();
-  for (const btn of $$('.card [data-add]')) {
+  for (const btn of $$('[data-add]')) {
     const c = order[btn.dataset.add!] ?? 0;
     if (c) btn.dataset.count = String(c);
     else delete btn.dataset.count;
-    btn.querySelector('.add-count')!.textContent = c ? String(c) : '';
+    const n = btn.querySelector('.n');
+    if (n) n.textContent = c ? String(c) : '';
   }
-  for (const sheet of $$('.drink-sheet')) {
-    const c = order[sheet.dataset.sheet!] ?? 0;
-    if (c) sheet.dataset.count = String(c);
-    else delete sheet.dataset.count;
-    sheet.querySelector('[data-qty-label]')!.textContent = c ? data.s.inOrder.replace('{n}', String(c)) : '';
-  }
+  const n = count();
+  const bar = $('#orderbar');
+  bar.hidden = n === 0;
+  $('[data-ob-count]').textContent = String(n);
+  $('[data-ob-total]').textContent = money(total());
 
-  orderBar.hidden = n === 0;
-  $('[data-ob-count]')!.textContent = String(n);
-  $('[data-ob-total]')!.textContent = money(total());
-
-  const ids = Object.keys(order).sort((a, b) => Object.keys(data.drinks).indexOf(a) - Object.keys(data.drinks).indexOf(b));
-  orderSheet.toggleAttribute('data-has-items', n > 0);
-  orderList.innerHTML = ids
+  const ids = ordered();
+  const sheet = $('#order');
+  sheet.toggleAttribute('data-has-items', n > 0);
+  $('[data-order-count]').textContent = n ? plural(data.s.items, n) : '';
+  $('[data-order-list]').innerHTML = ids
     .map((id) => {
-      const d = data.drinks[id];
+      const it = data.items[id];
       const q = order[id];
       return `<li>
-        <span class="o-name">${esc(d.name)}</span>
-        <span class="o-meta">${q} × ${money(d.price)}${d.size ? ` · ${esc(d.size)}` : ''}</span>
+        <span class="o-name">${esc(it.name)}</span>
+        <span class="o-meta">${it.note ? `${esc(it.note)} · ` : ''}${q} × ${money(it.price)}</span>
         <span class="o-step">
-          <button class="icon-btn" type="button" data-remove="${id}" aria-label="${esc(data.s.remove)}: ${esc(d.name)}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+          <button type="button" data-remove="${id}" aria-label="${esc(data.s.remove)}: ${esc(it.name)}">−</button>
           <span class="o-qty">${q}</span>
-          <button class="icon-btn" type="button" data-add="${id}" aria-label="${esc(data.s.add)}: ${esc(d.name)}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button type="button" data-add="${id}" aria-label="${esc(data.s.add)}: ${esc(it.name)}">+</button>
         </span>
       </li>`;
     })
     .join('');
-  $('[data-order-total]')!.textContent = money(total());
+  $('[data-order-total]').textContent = money(total());
 
-  // The bartender view always shows the Spanish name, plus the guest's language when it differs.
-  btList.innerHTML = ids
+  // The bartender always reads Spanish names.
+  $('[data-bt-list]').innerHTML = ids
     .map((id) => {
-      const d = data.drinks[id];
-      const sub = d.name !== d.es ? `<span class="bt-sub">${esc(d.name)}</span>` : '';
-      return `<li><span class="bt-qty">${order[id]}×</span><span class="bt-name">${esc(d.es)}${sub}</span><span class="bt-price">${money(d.price * order[id])}</span></li>`;
+      const it = data.items[id];
+      return `<li><span class="bt-q">${order[id]}</span><span class="bt-name">${esc(it.es)}${it.esNote ? `<small>${esc(it.esNote)}</small>` : ''}</span><span class="price">${money(it.price * order[id])}</span></li>`;
     })
     .join('');
-  $('[data-bt-count]')!.textContent = plural(data.esItems, n);
-  $('[data-bt-total]')!.textContent = money(total());
+  $('[data-bt-count]').textContent = plural(data.s.esItems, n);
+  $('[data-bt-total]').textContent = money(total());
 }
 
-/* ---------------- Sheets & routing ---------------- */
+/* ---------------- Dialogs (sheets, order, bartender) ---------------- */
+// Each open dialog is a history entry, so the phone's back button closes it.
 
-let current: HTMLDialogElement | null = null;
+const stack: HTMLDialogElement[] = [];
+let wakeLock: { release(): Promise<void> } | null = null;
 
-function lock() {
-  document.body.classList.toggle('locked', !!$('dialog[open]'));
-}
-
-function closeDialog(dlg: HTMLDialogElement, animate = true) {
-  if (!dlg.open) return;
-  if (!animate || matchMedia('(prefers-reduced-motion: reduce)').matches) {
-    dlg.close();
-    lock();
-    return;
+function openDialog(dlg: HTMLDialogElement) {
+  if (dlg.open) return;
+  dlg.classList.remove('closing');
+  dlg.showModal();
+  stack.push(dlg);
+  history.pushState({ stz: stack.length }, '', location.href);
+  if (dlg.id === 'bartender') {
+    (navigator as Navigator & { wakeLock?: { request(t: 'screen'): Promise<{ release(): Promise<void> }> } }).wakeLock
+      ?.request('screen').then((l) => (wakeLock = l)).catch(() => {});
   }
+}
+
+function closeTop(animate = true) {
+  const dlg = stack.pop();
+  if (!dlg) return;
+  if (dlg.id === 'bartender') { wakeLock?.release().catch(() => {}); wakeLock = null; }
+  dlg.style.transform = '';
+  if (!animate || reduce() || !dlg.classList.contains('sheet')) { dlg.close(); return; }
   dlg.classList.add('closing');
-  const done = () => {
-    dlg.classList.remove('closing');
-    if (current === dlg) return; // reopened while it was closing
-    dlg.close();
-    lock();
-  };
-  const t = setTimeout(done, 260);
+  const done = () => { dlg.classList.remove('closing'); dlg.close(); };
+  const t = setTimeout(done, 240);
   dlg.addEventListener('animationend', () => { clearTimeout(t); done(); }, { once: true });
 }
 
-function sheetFor(hash: string): HTMLDialogElement | null {
-  if (hash === 'pedido') return orderSheet;
-  return data.drinks[hash] ? $<HTMLDialogElement>(`#d-${CSS.escape(hash)}`) : null;
-}
-
-function route() {
-  const next = sheetFor(decodeURIComponent(location.hash.slice(1)));
-  if (next === current) return;
-  if (current) closeDialog(current, !next);
-  current = next;
-  if (next) {
-    if (next.classList.contains('closing')) next.classList.remove('closing');
-    if (!next.open) next.showModal();
-    next.querySelector('.sheet-scroll')?.scrollTo(0, 0);
-    lock();
-  }
-}
-
-/** Opens a sheet as a history entry, so the phone's back button closes it. */
-function go(hash: string) {
-  history.pushState({ stz: true }, '', `#${hash}`);
-  route();
-}
-
-function dismiss() {
+/** Close the top dialog through history, so back-button and close-button behave the same. */
+function requestClose() {
   if (history.state?.stz) history.back();
-  else {
-    history.replaceState(null, '', location.pathname + location.search);
-    route();
-  }
+  else closeTop();
 }
+addEventListener('popstate', () => {
+  const depth = history.state?.stz ?? 0;
+  while (stack.length > depth) closeTop(stack.length === depth + 1);
+});
 
-window.addEventListener('popstate', route);
-window.addEventListener('hashchange', route);
-
-for (const dlg of [...$$<HTMLDialogElement>('dialog.sheet')]) {
-  dlg.addEventListener('cancel', (e) => {
-    e.preventDefault();
-    dismiss();
-  });
-  // Tap on the dimmed backdrop closes the sheet.
+for (const dlg of $$<HTMLDialogElement>('dialog')) {
+  dlg.addEventListener('cancel', (e) => { e.preventDefault(); requestClose(); });
   dlg.addEventListener('click', (e) => {
     if (e.target !== dlg) return;
     const r = dlg.getBoundingClientRect();
-    const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
-    if (!inside) dismiss();
+    if (e.clientY < r.top || e.clientY > r.bottom || e.clientX < r.left || e.clientX > r.right) requestClose();
+  });
+  // Drag the grab handle down to dismiss.
+  const grab = dlg.querySelector<HTMLElement>('.grab');
+  if (!grab) continue;
+  let y0: number | null = null;
+  grab.addEventListener('pointerdown', (e) => { y0 = e.clientY; grab.setPointerCapture(e.pointerId); dlg.style.transition = 'none'; });
+  grab.addEventListener('pointermove', (e) => { if (y0 !== null) dlg.style.transform = `translateY(${Math.max(0, e.clientY - y0)}px)`; });
+  const end = (e: PointerEvent) => {
+    if (y0 === null) return;
+    const dy = e.clientY - y0;
+    y0 = null;
+    dlg.style.transition = '';
+    if (dy > 80) requestClose();
+    else dlg.style.transform = '';
+  };
+  grab.addEventListener('pointerup', end);
+  grab.addEventListener('pointercancel', end);
+}
+
+/* ---------------- Views ---------------- */
+
+type View = 'cards' | 'list' | 'bar' | 'pasta';
+let view: View = 'cards';
+const viewTog = $('#viewTog');
+
+function setView(v: View) {
+  view = v;
+  $('#listPanel').hidden = v !== 'list';
+  $('#barPanel').hidden = v !== 'bar';
+  $('#pastaPanel').hidden = v !== 'pasta';
+  for (const tab of $$('[data-tab]')) {
+    const on = tab.dataset.tab === (v === 'cards' || v === 'list' ? 'cocktails' : v);
+    tab.setAttribute('aria-selected', String(on));
+    tab.tabIndex = on ? 0 : -1;
+  }
+  viewTog.style.visibility = v === 'bar' || v === 'pasta' ? 'hidden' : 'visible';
+  viewTog.setAttribute('aria-pressed', String(v === 'list'));
+  $('#viewLbl').textContent = v === 'list' ? data.s.cards : data.s.list;
+  const hash = v === 'bar' ? '#vinos' : v === 'pasta' ? '#pasta' : v === 'list' ? '#lista' : `#${data.ids[cur]}`;
+  history.replaceState(history.state, '', hash);
+  if (v === 'bar' || v === 'pasta' || v === 'list') {
+    const p = $(v === 'bar' ? '#barPanel' : v === 'pasta' ? '#pastaPanel' : '#listPanel');
+    p.scrollTop = 0;
+  }
+}
+viewTog.addEventListener('click', () => setView(view === 'list' ? 'cards' : 'list'));
+
+// Tabs: click, plus arrow keys between them.
+const tabs = $$('[data-tab]');
+tabs.forEach((tab, i) => {
+  tab.addEventListener('click', () => setView(tab.dataset.tab === 'cocktails' ? 'cards' : (tab.dataset.tab as View)));
+  tab.addEventListener('keydown', (e) => {
+    const k = (e as KeyboardEvent).key;
+    if (k !== 'ArrowRight' && k !== 'ArrowLeft') return;
+    const next = tabs[(i + (k === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+    next.focus();
+    next.click();
+  });
+});
+
+/* ---------------- Cards ---------------- */
+
+let cur = 0;
+const hex = (h: string) => [1, 3, 5].map((k) => parseInt(h.slice(k, k + 2), 16));
+const mix = (a: string, b: string, t: number) => {
+  const A = hex(a), B = hex(b);
+  return '#' + A.map((v, k) => Math.round(v + (B[k] - v) * t).toString(16).padStart(2, '0')).join('');
+};
+const dots = $$('.dots i');
+const [prevBtn, nextBtn] = $$<HTMLButtonElement>('[data-step]');
+let hashTimer = 0;
+
+function onScroll() {
+  const w = track.clientWidth || 1;
+  const f = Math.max(0, Math.min(N - 1, track.scrollLeft / w));
+  const lo = Math.floor(f), hi = Math.min(N - 1, lo + 1);
+  app.style.setProperty('--c1', mix(data.colors[lo], data.colors[hi], f - lo));
+  const c = Math.round(f);
+  if (target !== null && Math.abs(f - target) < 0.01) target = null;
+  if (c === cur) return;
+  cur = c;
+  dots.forEach((d, i) => d.classList.toggle('on', i === cur));
+  $('#cur').textContent = String(cur + 1).padStart(2, '0');
+  prevBtn.disabled = cur === 0;
+  nextBtn.disabled = cur === N - 1;
+  clearTimeout(hashTimer);
+  hashTimer = window.setTimeout(() => { if (view === 'cards') history.replaceState(history.state, '', `#${data.ids[cur]}`); }, 250);
+}
+let ticking = false;
+track.addEventListener('scroll', () => {
+  if (ticking) return;
+  ticking = true;
+  requestAnimationFrame(() => { ticking = false; onScroll(); });
+}, { passive: true });
+
+function goTo(i: number, smooth = false) {
+  track.scrollTo({ left: i * track.clientWidth, behavior: smooth && !reduce() ? 'smooth' : 'auto' });
+  onScroll();
+}
+prevBtn.disabled = true;
+// Remember where a smooth scroll is heading, so quick repeated taps keep advancing.
+let target: number | null = null;
+track.addEventListener('scrollend', () => { target = null; });
+for (const b of [prevBtn, nextBtn]) {
+  b.addEventListener('click', () => {
+    target = Math.max(0, Math.min(N - 1, (target ?? cur) + Number(b.dataset.step)));
+    goTo(target, true);
   });
 }
-
-/* ---------------- Bartender view ---------------- */
-
-const bartender = $<HTMLDialogElement>('#bartender')!;
-let wakeLock: { release(): Promise<void> } | null = null;
-
-async function showBartender() {
-  bartender.showModal();
-  lock();
-  try {
-    wakeLock = await (navigator as Navigator & { wakeLock?: { request(t: 'screen'): Promise<{ release(): Promise<void> }> } }).wakeLock?.request('screen') ?? null;
-  } catch { wakeLock = null; }
-}
-function hideBartender() {
-  bartender.close();
-  wakeLock?.release().catch(() => {});
-  wakeLock = null;
-  lock();
-}
-bartender.addEventListener('cancel', (e) => {
-  e.preventDefault();
-  hideBartender();
+addEventListener('resize', () => goTo(cur));
+addEventListener('keydown', (e) => {
+  if (view !== 'cards' || stack.length || coverShown()) return;
+  if ((e.target as HTMLElement).closest('[role="tab"]')) return;
+  if (e.key === 'ArrowRight') nextBtn.click();
+  if (e.key === 'ArrowLeft') prevBtn.click();
 });
+
+/* ---------------- List filters ---------------- */
+
+function applyFilter(k: string) {
+  for (const c of $$('[data-filter]')) c.setAttribute('aria-pressed', String(c.dataset.filter === k));
+  let shown = 0;
+  for (const row of $$('.list .row')) {
+    const ok = !k || row.dataset.taste!.split(' ').includes(k);
+    row.hidden = !ok;
+    if (ok) shown++;
+  }
+  for (const h of $$('.list .grp-h')) h.hidden = !$$(`.list .row[data-group="${h.dataset.group}"]`).some((r) => !r.hidden);
+  $('[data-empty]').hidden = shown > 0;
+}
 
 /* ---------------- Clicks ---------------- */
 
 document.addEventListener('click', (e) => {
-  const el = (e.target as Element).closest<HTMLElement>(
-    '[data-open],[data-add],[data-remove],[data-close],[data-open-order],[data-show-bartender],[data-clear-order],[data-filter],[data-clear-filters],[data-lang]',
-  );
+  const el = (e.target as Element).closest<HTMLElement>('[data-add],[data-remove],[data-sheet],[data-close],[data-open-order],[data-show-bartender],[data-clear-order],[data-goto],[data-filter],[data-lang]');
   if (!el) return;
   const ds = el.dataset;
-
-  if (ds.open) {
-    e.preventDefault();
-    if (location.hash.slice(1) !== ds.open) go(ds.open);
-  } else if (ds.add) {
-    change(ds.add, 1);
-  } else if (ds.remove) {
-    change(ds.remove, -1);
-  } else if ('close' in ds) {
-    if (el.closest('#bartender')) hideBartender();
-    else dismiss();
-  } else if ('openOrder' in ds) {
-    go('pedido');
-  } else if ('showBartender' in ds) {
-    showBartender();
-  } else if ('clearOrder' in ds) {
-    if (confirm(data.s.confirmClear)) {
-      order = {};
-      save();
-      render();
-      dismiss();
-    }
-  } else if (ds.filter) {
-    const on = el.getAttribute('aria-pressed') !== 'true';
-    el.setAttribute('aria-pressed', String(on));
-    applyFilters();
-  } else if ('clearFilters' in ds) {
-    for (const c of $$('[data-filter]')) c.setAttribute('aria-pressed', 'false');
-    applyFilters();
-  } else if (ds.lang) {
+  if (ds.add) change(ds.add, 1, el);
+  else if (ds.remove) change(ds.remove, -1);
+  else if (ds.sheet) openDialog($<HTMLDialogElement>(`#s-${CSS.escape(ds.sheet)}`));
+  else if ('close' in ds) requestClose();
+  else if ('openOrder' in ds) openDialog($<HTMLDialogElement>('#order'));
+  else if ('showBartender' in ds) openDialog($<HTMLDialogElement>('#bartender'));
+  else if ('clearOrder' in ds) {
+    if (confirm(data.s.confirmClear)) { order = {}; save(); render(); requestClose(); }
+  } else if (ds.goto) {
+    setView('cards');
+    goTo(data.ids.indexOf(ds.goto));
+  } else if (ds.filter !== undefined) applyFilter(ds.filter);
+  else if (ds.lang) {
     store.set('stz-lang', ds.lang);
+    store.set('stz-in', '1', sessionStorage);
     const a = el as HTMLAnchorElement;
-    if (location.hash) a.href = a.href.split('#')[0] + location.hash;
+    a.href = a.href.split('#')[0] + location.hash;
   }
 });
 
-/* ---------------- Filters ---------------- */
+/* ---------------- Cover ---------------- */
 
-const strengthTest: Record<string, (s: number) => boolean> = {
-  zero: (s) => s === 0,
-  light: (s) => s === 1,
-  strong: (s) => s === 3,
-};
+const cover = $('#cover');
+const coverShown = () => !document.documentElement.classList.contains('in') && !cover.hidden;
 
-function applyFilters() {
-  const active = $$('[data-filter][aria-pressed="true"]').map((c) => c.dataset.filter!.split(':') as [string, string]);
-  const flavors = active.filter(([k]) => k === 'flavor').map(([, v]) => v);
-  const strengths = active.filter(([k]) => k === 'strength').map(([, v]) => strengthTest[v]);
-  let shown = 0;
-  for (const card of $$('.card')) {
-    const f = card.dataset.flavor!.split(' ');
-    const s = Number(card.dataset.strength);
-    const ok = (!flavors.length || flavors.some((x) => f.includes(x))) && (!strengths.length || strengths.some((fn) => fn(s)));
-    card.hidden = !ok;
-    if (ok) shown++;
-  }
-  for (const sec of $$('.cat')) {
-    const any = $$('.card', sec).some((c) => !c.hidden);
-    sec.hidden = !any;
-    const link = $(`[data-nav="${sec.dataset.cat}"]`);
-    if (link) link.parentElement!.hidden = !any;
-  }
-  const status = $('[data-filter-status]')!;
-  status.hidden = active.length === 0;
-  $('[data-results]')!.textContent = plural(data.s.results, shown);
-  $('[data-empty]')!.hidden = shown > 0;
-  spy();
-}
+$('#open').addEventListener('click', () => {
+  store.set('stz-in', '1', sessionStorage);
+  if (reduce()) { cover.hidden = true; return; }
+  const pour = $('#pour');
+  pour.classList.add('on');
+  setTimeout(() => { cover.hidden = true; }, 320);
+  setTimeout(() => pour.classList.remove('on'), 1250);
+});
 
-/* ---------------- Scroll-spy ---------------- */
-
-const nav = $('.catnav ul')!;
-let activeCat = '';
-function spy() {
-  const offset = nav.getBoundingClientRect().bottom + 24;
-  let id = '';
-  for (const sec of $$('.cat')) {
-    if (sec.hidden) continue;
-    if (sec.getBoundingClientRect().top <= offset) id = sec.dataset.cat!;
-    else if (!id) id = sec.dataset.cat!;
-  }
-  if (id === activeCat) return;
-  activeCat = id;
-  for (const a of $$('[data-nav]')) a.classList.toggle('active', a.dataset.nav === id);
-  const link = $(`[data-nav="${id}"]`);
-  if (link) {
-    const left = link.offsetLeft - (nav.clientWidth - link.offsetWidth) / 2;
-    nav.scrollTo({ left, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
-  }
-}
-let ticking = false;
-window.addEventListener('scroll', () => {
-  if (ticking) return;
-  ticking = true;
-  requestAnimationFrame(() => { ticking = false; spy(); });
-}, { passive: true });
-
-/* ---------------- Open / closed status ---------------- */
-
-function renderStatus() {
-  const el = $('[data-status]');
-  if (!el) return;
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: data.timeZone, weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
-  }).formatToParts(new Date());
-  const get = (t: string) => parts.find((p) => p.type === t)!.value;
-  const day = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].indexOf(get('weekday'));
-  const now = Number(get('hour')) * 60 + Number(get('minute'));
-  const mins = (hm: string) => { const [h, m] = hm.split(':').map(Number); return h * 60 + m; };
-  const span = (h: { open: string; close: string }) => {
-    const o = mins(h.open);
-    let c = mins(h.close);
-    if (c <= o) c += 1440;
-    return [o, c] as const;
-  };
-  const time = (hm: string) => {
-    const [h, m] = hm.split(':').map(Number);
-    return new Intl.DateTimeFormat(data.locale, { hour: 'numeric', minute: m ? '2-digit' : undefined, timeZone: 'UTC' })
-      .format(Date.UTC(2000, 0, 1, h, m));
-  };
-  const s = data.s.status;
-  let open: string | null = null;
-  const today = data.hours[day];
-  const yday = data.hours[(day + 6) % 7];
-  if (today) { const [o, c] = span(today); if (now >= o && now < c) open = today.close; }
-  if (!open && yday) { const [, c] = span(yday); if (now + 1440 < c) open = yday.close; }
-
-  let text: string;
-  if (open) text = `${s.open} · ${s.until} ${time(open)}`;
-  else {
-    let label = '';
-    for (let i = 0; i < 7; i++) {
-      const h = data.hours[(day + i) % 7];
-      if (!h) continue;
-      if (i === 0 && now >= mins(h.open)) continue;
-      const when = i === 0 ? s.today : i === 1 ? s.tomorrow : data.s.days[(day + i) % 7];
-      label = ` · ${s.opensAt} ${when}, ${time(h.open)}`;
-      break;
+/** Lay out the hallway so its vanishing point sits behind the logo. */
+function layoutHall() {
+  if (!coverShown()) return;
+  const R = cover.getBoundingClientRect();
+  const L = $('.logo', cover).getBoundingClientRect();
+  const W = R.width, H = R.height, vx = W / 2, vy = L.top - R.top + L.height * 0.42;
+  const w0 = Math.min(170, W * 0.44), h0 = (w0 * 210) / 190, y0 = Math.max(12, H * 0.025) + h0 / 2 + 10, D0 = vy - y0;
+  $$('.hall .ch', cover).forEach((el, k) => {
+    const sc = 1 / (1 + k * 0.85);
+    el.style.width = `${(w0 * sc).toFixed(1)}px`;
+    el.style.top = `${(vy - D0 * sc).toFixed(1)}px`;
+    el.style.opacity = (1 - k * 0.13).toFixed(2);
+    el.style.filter = k ? `blur(${(k * 0.1).toFixed(2)}px) brightness(${(1 - k * 0.08).toFixed(2)})` : 'none';
+    el.style.zIndex = String(10 - k);
+  });
+  const vp = $('#vp');
+  vp.style.left = `${vx}px`;
+  vp.style.top = `${vy}px`;
+  const P = (x: number, y: number, t: number) => [vx + (x - vx) * t, vy + (y - vy) * t];
+  const g = 'rgba(212,176,112,';
+  const ln = (a: number[], b: number[], o: string | number) => `<line x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="${g}${o})" stroke-width="1"/>`;
+  const corners = [[0, 0], [W, 0], [W, H], [0, H]];
+  let out = '';
+  corners.forEach((c) => { out += ln(P(c[0], c[1], 0.1), c, 0.22); });
+  out += `<polygon points="${corners.map((c) => P(c[0], c[1], 0.1).join(',')).join(' ')}" fill="rgba(255,196,130,.05)" stroke="${g}.25)" stroke-width="1"/>`;
+  [0.18, 0.28, 0.42, 0.64].forEach((t, i) => {
+    for (const [x1, y1, x2, y2] of [[0, 0, 0, H], [W, 0, W, H]]) {
+      const a = P(x1, y1, t), b = P(x2, y2, t);
+      out += ln(a, b, (0.08 + 0.05 * i).toFixed(2));
+      const sy = a[1] + (b[1] - a[1]) * 0.38, sx = a[0], r = 3 + 9 * t;
+      out += `<circle cx="${sx}" cy="${sy}" r="${(r * 1.7).toFixed(1)}" fill="rgba(255,190,120,${(0.04 + 0.04 * t).toFixed(3)})"/><circle cx="${sx}" cy="${sy}" r="${(r * 0.45).toFixed(1)}" fill="rgba(255,220,170,${(0.25 + 0.3 * t).toFixed(2)})"/>`;
     }
-    text = s.closed + label;
-  }
-  el.classList.toggle('open', !!open);
-  el.querySelector('span')!.textContent = text;
-  el.hidden = false;
-  // Highlight the bar's current "business day" in the footer hours.
-  const bizDay = !open || (today && now >= span(today)[0]) ? day : (day + 6) % 7;
-  for (const li of $$('[data-day]')) li.classList.toggle('today', Number(li.dataset.day) === bizDay);
+  });
+  [0.1, 0.2, 0.32, 0.48, 0.7].forEach((t) => { out += ln(P(0, H, t), P(W, H, t), (0.04 + 0.06 * t).toFixed(3)); });
+  const svg = $('#hallLines');
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = out;
 }
+addEventListener('resize', layoutHall);
+document.fonts?.ready.then(layoutHall);
 
 /* ---------------- Boot ---------------- */
 
 render();
-applyFilters();
-renderStatus();
-setInterval(renderStatus, 60_000);
-if (location.hash) {
-  // Opened from a shared link: make the sheet a history entry above the plain menu.
-  const h = location.hash.slice(1);
-  if (sheetFor(decodeURIComponent(h))) {
-    history.replaceState(null, '', location.pathname + location.search);
-    go(h);
-  }
-}
+layoutHall();
+const h = decodeURIComponent(location.hash.slice(1));
+if (h === 'vinos') setView('bar');
+else if (h === 'pasta') setView('pasta');
+else if (h === 'lista') setView('list');
+else if (data.ids.includes(h)) { goTo(data.ids.indexOf(h)); }

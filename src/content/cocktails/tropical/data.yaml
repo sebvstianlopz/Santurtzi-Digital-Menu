@@ -1,0 +1,17 @@
+name: Tropical
+group: casa
+order: 11
+price: 13
+color: '#8f3412'
+taste: [bubbly, citrus]
+line:
+  es: "Burbujas con sabor a isla."
+  en: "Bubbles that taste like the island."
+base:
+  - Champagne
+  - { es: Licor de naranja, en: Orange liqueur }
+mix: with
+adds:
+  - { es: Limón, en: Lime }
+photo: ./photo.webp
+scale: 1

@@ -1,0 +1,15 @@
+name: Escocés GT Mule
+group: casa
+order: 10
+price: 11
+color: '#1f3a33'
+taste: [fresh, ginger]
+line:
+  es: "Whisky escocés, ginger beer y té verde."
+  en: "Scotch, ginger beer and green tea."
+base: ["Dewar's 12"]
+mix: with
+adds:
+  - { es: Lima, en: Lime }
+  - Ginger beer
+  - { es: Té verde, en: Green tea }

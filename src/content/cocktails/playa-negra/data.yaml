@@ -1,0 +1,17 @@
+name: Playa Negra
+group: casa
+order: 6
+price: 12
+color: '#4a0f18'
+taste: [fruity, citrus]
+line:
+  es: "Arena negra, borde picante."
+  en: "Black sand, spicy rim."
+base: [Tequila, Triple sec]
+mix: infused
+adds:
+  - { es: Lima, en: Lime }
+  - { es: Sandía, en: Watermelon }
+  - { es: Flor de Jamaica, en: Hibiscus }
+photo: ./photo.webp
+scale: 0.66

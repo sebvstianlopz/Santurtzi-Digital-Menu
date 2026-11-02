@@ -1,0 +1,15 @@
+name: '724'
+group: casa
+order: 5
+price: 10
+color: '#3a2216'
+taste: [coffee, spiced]
+line:
+  es: "Para los que piden café a medianoche."
+  en: "For the ones who want coffee at midnight."
+base: [Bourbon, Kahlúa]
+mix: infused
+adds:
+  - { es: Canela, en: Cinnamon }
+  - { es: Naranja, en: Orange }
+  - Espresso

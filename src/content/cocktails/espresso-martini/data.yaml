@@ -1,0 +1,16 @@
+name: Espresso Martini
+group: mas
+order: 1
+price: 11
+color: '#4a2a1b'
+taste: [coffee, sweet]
+line:
+  es: "Para que la noche empiece despierta."
+  en: "For a night that starts wide awake."
+base: [Vodka, Kahlúa]
+mix: with
+adds:
+  - Espresso
+  - { es: Azúcar, en: Sugar }
+photo: ./photo.webp
+scale: 0.78
